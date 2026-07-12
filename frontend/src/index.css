@@ -1,0 +1,147 @@
+:root {
+  font-family: Inter, Arial, Helvetica, sans-serif;
+  color: #071b33;
+  background: #f4f7fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --navy: #061a32;
+  --blue: #0a315d;
+  --royal: #1769c2;
+  --gold: #d8a63a;
+  --white: #ffffff;
+  --muted: #647587;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #f4f7fb;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+img {
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+main {
+  min-height: 60vh;
+}
+
+.section-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.section-heading {
+  max-width: 780px;
+  margin: 0 auto 50px;
+  text-align: center;
+}
+
+.section-heading .eyebrow {
+  margin: 0 0 12px;
+  color: #b6841e;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.section-heading h2 {
+  margin: 0;
+  color: #071b33;
+  font-size: clamp(34px, 5vw, 52px);
+  line-height: 1.15;
+  letter-spacing: -1.2px;
+}
+
+.section-heading p:last-child {
+  margin: 18px auto 0;
+  color: #647587;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 50px;
+  padding: 0 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 9px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.primary-button {
+  border: 1px solid #d8a63a;
+  color: #071b33;
+  background: linear-gradient(135deg, #edc56b, #d8a63a);
+  box-shadow: 0 12px 28px rgba(216,166,58,0.22);
+}
+
+.secondary-button {
+  border: 1px solid rgba(255,255,255,0.42);
+  color: #fff;
+  background: rgba(255,255,255,0.06);
+}
+
+.primary-button:hover,
+.secondary-button:hover {
+  transform: translateY(-3px);
+}
+
+.form-status {
+  margin: 15px 0 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.form-status.success {
+  color: #0f6a3d;
+  background: #e9f8ef;
+  border: 1px solid #bce7cc;
+}
+
+.form-status.error {
+  color: #9b2727;
+  background: #fff0f0;
+  border: 1px solid #f1c5c5;
+}
+
+.loading-text,
+.empty-text {
+  padding: 35px;
+  color: #647587;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .section-heading { margin-bottom: 38px; }
+}

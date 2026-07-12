@@ -1,0 +1,21 @@
+.auth-page { background: #f4f7fb; }
+.auth-section { padding: 85px 6% 100px; background: linear-gradient(180deg, #fff, #f3f7fb); }
+.auth-card { max-width: 760px; margin: 0 auto; padding: 36px; border: 1px solid #dfe7ee; border-radius: 18px; background: #fff; box-shadow: 0 23px 52px rgba(7,27,51,0.12); }
+.auth-card.small-card { max-width: 540px; }
+.auth-card-title { margin-bottom: 25px; display: flex; align-items: center; gap: 14px; }
+.auth-card-title > span { width: 49px; height: 49px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: #071b33; background: #d8a63a; font-size: 20px; }
+.auth-card-title p { margin: 0; color: #b6841e; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+.auth-card-title h2 { margin: 5px 0 0; color: #071b33; font-size: 25px; }
+.auth-card label { display: block; margin: 16px 0 7px; color: #071b33; font-size: 12px; font-weight: 800; }
+.auth-card input, .auth-card select { width: 100%; height: 44px; padding: 0 13px; border: 1px solid #ccd8e2; border-radius: 8px; outline: none; background: #fff; }
+.auth-card input:focus, .auth-card select:focus { border-color: #1769c2; box-shadow: 0 0 0 4px rgba(23,105,194,0.1); }
+.auth-card button { width: 100%; margin-top: 23px; padding: 14px; border: 0; border-radius: 8px; color: #071b33; background: #d8a63a; font-size: 13px; font-weight: 900; cursor: pointer; }
+.auth-card button:disabled { opacity: 0.7; }
+.auth-switch { margin: 20px 0 0; color: #647587; font-size: 12px; text-align: center; }
+.auth-switch a { color: #1769c2; font-weight: 900; text-decoration: none; }
+.demo-login { margin-top: 22px; padding: 14px; display: grid; gap: 4px; border-radius: 8px; color: #647587; background: #f4f7fb; font-size: 10px; }
+.demo-login strong { color: #071b33; }
+.register-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 18px; }
+.full-field { grid-column: 1 / -1; }
+.register-grid button { grid-column: 1 / -1; }
+@media (max-width: 600px) { .auth-section { padding: 70px 20px; } .auth-card { padding: 27px 20px; } .register-grid { grid-template-columns: 1fr; } .full-field, .register-grid button { grid-column: auto; } }
