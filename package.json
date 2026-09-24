@@ -1,0 +1,9 @@
+{
+  "name": "emsam-website",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "22.x" },
+  "scripts": {
+    "build": "npm run build --prefix frontend && node scripts/copy-papers.mjs"
+  }
+}

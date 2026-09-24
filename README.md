@@ -363,7 +363,43 @@ npm run build
 
 ## 🚢 Deployment Configuration
 
-Set `MONGODB_URI`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` and `FRONTEND_URL` on the backend host. Run `npm run db:setup` against the intended MongoDB database, then `npm start`. Set `VITE_API_URL` on the frontend host and rebuild the frontend. Keep `backend/uploads/papers` on persistent storage for uploaded PDFs. Updating local code does not update an existing deployed website.
+The repository includes `vercel.json` to deploy the React frontend and Express API together in one Vercel project.
+
+### Vercel project settings
+
+1. Push the deployment files to GitHub.
+2. In Vercel, set **Root Directory** to the repository root (`.`), not `frontend`.
+3. Select **Other** as the Framework Preset and use Node.js **22.x**.
+4. Remove old build/install/output overrides so `vercel.json` supplies these settings:
+
+| Setting | Value |
+|---|---|
+| Install Command | `npm ci --prefix backend --omit=dev && npm ci --prefix frontend` |
+| Build Command | `npm run build` |
+| Output Directory | `frontend/dist` |
+
+5. Add these environment variables for Production (and Preview if you use preview deployments):
+
+| Variable | Value |
+|---|---|
+| `MONGODB_URI` | Your Atlas connection string including `/emsam_db` |
+| `JWT_SECRET` | Your private JWT signing secret |
+| `FRONTEND_URL` | `https://emsam-website.vercel.app` or your actual frontend domain |
+
+Copy secret values from your local environment into Vercel settings, never into Git. Remove the old `VITE_API_URL` deployment variable: production now uses same-origin `/api`. `VITE_API_URL` is used only for local development.
+
+6. Ensure Atlas Network Access allows connections from your deployed Vercel backend. Allowing only your home computer's IP does not allow Vercel servers.
+7. Redeploy after saving the settings. Verify `/api/health` returns JSON and `/api/papers` returns paper records on your published domain.
+
+The API connects to the existing Atlas database; it does not seed records on every request. To seed a new database, configure it locally and run `npm run db:setup` inside `backend` once. `ADMIN_EMAIL` and `ADMIN_PASSWORD` are used by that setup command, not required by the deployed API.
+
+### PDFs and uploads
+
+The root build copies the 48 bundled PDFs to `frontend/dist/uploads/papers` for static hosting. On Vercel, new PDF uploads are stored persistently in MongoDB GridFS and downloaded through `/api/paper-files/:id`. Local development continues to use `backend/uploads/papers`.
+
+Hosted PDF and Excel uploads are limited to **4 MB per file** to leave room for multipart metadata under the Vercel Function request limit. Existing bundled PDFs are static downloads and are not subject to that upload limit. Spreadsheet imports process the upload in memory and preserve the source files.
+
+See [Vercel Node.js Functions](https://vercel.com/docs/functions/runtimes/node-js) and [Function limits](https://vercel.com/docs/functions/limitations) for the hosting behavior and limits.
 
 See the [Mongoose schema guide](https://mongoosejs.com/docs/guide.html) and [transaction guide](https://mongoosejs.com/docs/transactions.html) for the database APIs used here.
 

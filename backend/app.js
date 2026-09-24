@@ -32,6 +32,7 @@ app.use((req, res) => {
 });
 
 app.use((error, _req, res, _next) => {
+  if (res.headersSent) return _next(error);
   if (error instanceof multer.MulterError) {
     return res.status(400).json({ message: error.code === "LIMIT_FILE_SIZE" ? "The uploaded file is too large." : "Invalid file upload." });
   }

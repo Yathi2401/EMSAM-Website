@@ -10,12 +10,16 @@ import { User, Announcement, PastPaper, ExamResult, ContactMessage } from "../mo
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { examStreams, validText, validYear } from "../utils/validation.js";
 import { prepareResultRows, inTransaction } from "../utils/resultImport.js";
+import { paperBucket, storePaper } from "../utils/paperStorage.js";
 
 const router = express.Router();
 const papersFolder = fileURLToPath(new URL("../uploads/papers/", import.meta.url));
 const tempFolder = fileURLToPath(new URL("../uploads/temp/", import.meta.url));
-fs.mkdirSync(papersFolder, { recursive: true });
-fs.mkdirSync(tempFolder, { recursive: true });
+const cloud = Boolean(process.env.VERCEL);
+if (!cloud) {
+  fs.mkdirSync(papersFolder, { recursive: true });
+  fs.mkdirSync(tempFolder, { recursive: true });
+}
 
 const paperStorage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, papersFolder),
@@ -26,21 +30,21 @@ const paperStorage = multer.diskStorage({
 });
 
 const uploadPaper = multer({
-  storage: paperStorage,
-  limits: { fileSize: 25 * 1024 * 1024 },
+  storage: cloud ? multer.memoryStorage() : paperStorage,
+  limits: { fileSize: (cloud ? 4 : 25) * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     cb(null, file.mimetype === "application/pdf");
   },
 });
 
 const uploadSpreadsheet = multer({
-  dest: tempFolder,
-  limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+  ...(cloud ? { storage: multer.memoryStorage() } : { dest: tempFolder }),
+  limits: { fileSize: (cloud ? 4 : 10) * 1024 * 1024, files: 1 },
   fileFilter: (_req, file, cb) => cb(null, [".xlsx", ".xls"].includes(path.extname(file.originalname).toLowerCase())),
 });
 
 function removeUpload(file) {
-  if (!file) return;
+  if (!file?.path) return;
   try { fs.unlinkSync(file.path); } catch (error) {
     if (error.code !== "ENOENT") console.error("Unable to remove upload:", error);
   }
@@ -144,22 +148,29 @@ router.post("/papers", uploadPaper.single("paper"), async (req, res) => {
     return res.status(400).json({ message: "Paper file and all paper details are required." });
   }
 
-  const fileUrl = `/uploads/papers/${req.file.filename}`;
+  let storedId;
 
   try {
-    const handle = await fs.promises.open(req.file.path, "r");
-    const signature = Buffer.alloc(5);
-    try { await handle.read(signature, 0, 5, 0); } finally { await handle.close(); }
+    let signature = req.file.buffer?.subarray(0, 5);
+    if (!signature) {
+      const handle = await fs.promises.open(req.file.path, "r");
+      signature = Buffer.alloc(5);
+      try { await handle.read(signature, 0, 5, 0); } finally { await handle.close(); }
+    }
     if (signature.toString() !== "%PDF-") {
       removeUpload(req.file);
       return res.status(400).json({ message: "The uploaded file is not a PDF." });
     }
-    const result = await PastPaper.create({ title, subject, stream, exam_year: Number(year), paper_type: paperType, file_name: req.file.filename, file_url: fileUrl });
+    const filename = req.file.filename || `${randomUUID()}.pdf`;
+    if (cloud) storedId = await storePaper(req.file.buffer, filename);
+    const fileUrl = storedId ? `/api/paper-files/${storedId}` : `/uploads/papers/${filename}`;
+    const result = await PastPaper.create({ title, subject, stream, exam_year: Number(year), paper_type: paperType, file_name: filename, file_url: fileUrl });
 
     res.status(201).json({ message: "Past paper uploaded.", id: result.id });
   } catch (error) {
     console.error(error);
     removeUpload(req.file);
+    if (storedId) await paperBucket().delete(storedId).catch(cleanupError => console.error(cleanupError));
     res.status(500).json({ message: "Unable to save the past paper." });
   }
 });
@@ -174,7 +185,9 @@ router.delete("/papers/:id", async (req, res) => {
     if (path.dirname(filePath) !== path.resolve(papersFolder)) throw new Error("Invalid paper file path.");
 
     await PastPaper.deleteOne({ _id: paper._id });
-    removeUpload({ path: filePath });
+    if (paper.file_url.startsWith("/api/paper-files/")) {
+      await paperBucket().delete(new mongoose.Types.ObjectId(paper.file_url.split("/").pop()));
+    } else if (!cloud) removeUpload({ path: filePath });
     res.json({ message: "Past paper deleted." });
   } catch (error) {
     console.error(error);
@@ -195,7 +208,7 @@ router.post("/results/import", uploadSpreadsheet.single("resultsFile"), async (r
   try {
     let workbook;
     try {
-      workbook = XLSX.readFile(req.file.path);
+      workbook = req.file.buffer ? XLSX.read(req.file.buffer, { type: "buffer" }) : XLSX.readFile(req.file.path);
     } catch {
       throw Object.assign(new Error("Unable to read this Excel spreadsheet."), { status: 400 });
     }

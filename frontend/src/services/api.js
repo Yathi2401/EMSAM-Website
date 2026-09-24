@@ -1,4 +1,4 @@
-const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+const API_URL = (import.meta.env.PROD ? "/api" : (import.meta.env.VITE_API_URL || "http://localhost:5000/api")).replace(/\/+$/, "");
 const SERVER_URL = API_URL.replace(/\/api\/?$/, "");
 
 export async function apiRequest(path, options = {}) {

@@ -1,8 +1,24 @@
 import express from "express";
 import { Announcement, PastPaper, ExamResult, ContactMessage } from "../models/index.js";
 import { examStreams, validText, validEmail, validYear } from "../utils/validation.js";
+import mongoose from "mongoose";
+import { paperBucket } from "../utils/paperStorage.js";
 
 const router = express.Router();
+
+router.get("/paper-files/:id", async (req, res, next) => {
+  if (!mongoose.isObjectIdOrHexString(req.params.id)) return res.status(400).json({ message: "Invalid file ID." });
+  try {
+    const id = new mongoose.Types.ObjectId(req.params.id);
+    const bucket = paperBucket();
+    const [file] = await bucket.find({ _id: id }).toArray();
+    if (!file) return res.status(404).json({ message: "Paper file not found." });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Length", file.length);
+    res.setHeader("Content-Disposition", 'inline; filename="paper.pdf"');
+    bucket.openDownloadStream(id).on("error", next).pipe(res);
+  } catch (error) { next(error); }
+});
 
 router.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "EMSAM API" });

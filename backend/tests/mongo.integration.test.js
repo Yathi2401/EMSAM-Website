@@ -84,6 +84,11 @@ test("MongoDB API, seeding and transactional imports", { timeout: 1200000 }, asy
     form.append("paper", new Blob(["%PDF-1.4\nTest fixture"], { type: "application/pdf" }), "integration-test.pdf");
     const paper = await request("/admin/papers", { method: "POST", token, body: form });
     assert.equal(paper.status, 201);
+    const stored = await PastPaper.findById(paper.data.id);
+    const download = await fetch(new URL(stored.file_url, base));
+    assert.equal(download.status, 200);
+    assert.equal(download.headers.get("content-type"), "application/pdf");
+    assert.ok((await download.text()).startsWith("%PDF-"));
     assert.equal((await request(`/admin/papers/${paper.data.id}`, { method: "DELETE", token })).status, 200);
     assert.equal(await PastPaper.countDocuments(), 48);
   });
