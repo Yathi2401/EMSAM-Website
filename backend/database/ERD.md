@@ -11,5 +11,3 @@ The application uses independent Mongoose collections. There are no SQL tables o
 | contact_messages | full_name, email, subject, message, status | _id |
 
 MongoDB generates an ObjectId `_id` for every document. API responses expose it as a string `id` for compatibility with the React frontend. Mongoose maintains `created_at` and `updated_at` timestamps. Missing numeric results are stored as null. Password hashes are excluded from JSON responses.
-
-The SQL files in this folder are retained only as historical reference and are not used by setup or the running application.

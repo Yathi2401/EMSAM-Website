@@ -15,7 +15,6 @@
 [![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 
 [![Vercel](https://img.shields.io/badge/Frontend-Vercel-000000?style=flat-square&logo=vercel)](https://emsam-website.vercel.app)
-[![Railway](https://img.shields.io/badge/Backend-Railway-7B2CBF?style=flat-square&logo=railway)](https://emsam-website-production.up.railway.app)
 [![GitHub](https://img.shields.io/badge/Repository-GitHub-181717?style=flat-square&logo=github)](https://github.com/Yathi2401/EMSAM-Website)
 
 <br>
@@ -28,7 +27,7 @@
 
 ## 📖 About the Project
 
-The **EMSAM Student Association and Examination Management System** is a **MERN-stack web application ? MongoDB, Express, React and Node.js ?** developed for the **Engineering & Medical Students Association of Mullaitivu**.
+The **EMSAM Student Association and Examination Management System** is a **MERN-stack web application (MongoDB, Express, React and Node.js)** developed for the **Engineering & Medical Students Association of Mullaitivu**.
 
 The platform brings EMSAM’s educational programmes, student services, examination resources, results, announcements and association activities into one responsive digital system.
 
@@ -36,7 +35,7 @@ It provides:
 
 - 🌍 A professional public website
 - 📚 Dreamway examination resources
-- 🔐 Private student result search
+- 🔐 Individual student result search
 - 👨‍🎓 Student registration and login
 - 🛡️ Administrator management features
 - 📢 Announcement publishing
@@ -46,16 +45,16 @@ It provides:
 
 ---
 
-## 🚀 Live Deployment
+## 🚀 Website & Hosting
 
 | Service | Platform | Address |
 |---|---|---|
 | 🌐 Frontend | Vercel | [emsam-website.vercel.app](https://emsam-website.vercel.app) |
-| ⚙️ Backend API | Railway | [emsam-website-production.up.railway.app](https://emsam-website-production.up.railway.app) |
+| ⚙️ Backend API | Express / Node.js | Local: `http://localhost:5000/api` |
 | 🗄️ Database | MongoDB Atlas | Private MongoDB database |
 | 💻 Source Code | GitHub | [Yathi2401/EMSAM-Website](https://github.com/Yathi2401/EMSAM-Website) |
 
-> Login, results, announcements, contact forms and past papers require a running backend connected to MongoDB. The hosted backend must use the MongoDB environment settings described below; local configuration is not uploaded with Git.
+> MongoDB Atlas hosts the database, not the Express API. Run the backend locally for development. The published frontend needs a publicly reachable backend with its own environment settings; a local backend is not available to other website visitors.
 
 ---
 
@@ -65,13 +64,12 @@ It provides:
 |---|---|
 | 🎨 Frontend | React, Vite, JavaScript, CSS |
 | ⚙️ Backend | Node.js, Express.js |
-| 🗄️ Database | MySQL |
+| 🗄️ Database | MongoDB with Mongoose |
 | 🔐 Authentication | JSON Web Token and bcrypt |
 | 📤 File Uploads | Multer |
 | 📊 Result Import | Excel file processing |
 | 📁 PDF Storage | Backend file storage |
 | 🌐 Frontend Hosting | Vercel |
-| 🚂 Backend Hosting | Railway |
 | 🛢️ Database Hosting | MongoDB Atlas |
 | 🔄 Version Control | Git and GitHub |
 
@@ -123,7 +121,7 @@ The Dreamway section provides Advanced Level examination resources for Physical 
 
 ---
 
-## 🔐 Private Result Search
+## 🔐 Individual Result Search
 
 The results page displays one matching record at a time instead of a complete public list.
 
@@ -132,7 +130,7 @@ To retrieve a result, the student must provide:
 - 🔢 Index number
 - 🎓 Advanced Level stream
 
-The system returns the matching Dreamway 2026 result, including subject marks, grades, Z average and rank. Missing Z averages and ranks display ?Not available?.
+The system returns the matching Dreamway 2026 result, including subject marks, grades, Z average and rank. Missing Z averages and ranks display “Not available”.
 
 > Result lookup does not require login. Anyone with an index number and the correct stream can retrieve that result.
 
@@ -156,7 +154,7 @@ Registered students can access a personal student area.
 - 👤 Profile information
 - 📚 Easy access to past papers
 - 🧭 Dreamway information
-- 🔎 Private result search
+- 🔎 Individual result search
 - 📢 Announcement access
 - 🛡️ JWT-based authentication
 
@@ -219,19 +217,24 @@ EMSAM-Website
 │   ├── public
 │   │   └── media
 │   ├── src
-│   │   ├── assets
 │   │   ├── components
 │   │   ├── pages
 │   │   └── services
 │   └── package.json
 │
 ├── backend
+│   ├── config
 │   ├── data
 │   ├── database
 │   ├── middleware
+│   ├── models
 │   ├── routes
+│   ├── scripts
+│   ├── tests
 │   ├── uploads
 │   │   └── papers
+│   ├── utils
+│   ├── app.js
 │   ├── server.js
 │   └── package.json
 │
@@ -245,13 +248,13 @@ EMSAM-Website
 
 ---
 
-## ? Requirements
+## ✅ Requirements
 
 - Node.js 22.12 or later and npm.
 - MongoDB Atlas, or a locally running MongoDB replica set.
 - Transactional Excel imports require a replica set. A standalone MongoDB server supports the other features, but imports return a configuration error.
 
-## ?? Local Setup
+## 💻 Local Setup
 
 1. Copy `backend/.env.example` to `backend/.env` if it does not exist.
 2. Set `MONGODB_URI` to your MongoDB connection string, including the database name `emsam_db`.
@@ -282,7 +285,7 @@ The frontend environment should contain `VITE_API_URL=http://localhost:5000/api`
 
 The setup script adds the administrator, three announcements, 48 paper records and 287 result records. It preserves existing records and passwords when rerun. Log in with your configured administrator credentials; create student accounts through registration. No fixed-password demo student is created.
 
-### ?? MongoDB Atlas
+### ☁️ MongoDB Atlas
 
 Create a database deployment and a database user in Atlas, allow your machine's IP in Network Access, and copy the application connection string. Use the database user's credentials (not your Atlas account password), URL-encode special characters in the password, and include `/emsam_db` before the query string:
 
@@ -290,7 +293,7 @@ Create a database deployment and a database user in Atlas, allow your machine's 
 MONGODB_URI=mongodb+srv://YOUR_USER:YOUR_ENCODED_PASSWORD@YOUR_CLUSTER/emsam_db?retryWrites=true&w=majority
 ```
 
-### ?? Optional DNS Configuration
+### 🌐 Optional DNS Configuration
 
 If Atlas connections fail with `querySrv ECONNREFUSED` or `getaddrinfo ENOTFOUND`, the backend supports an optional DNS override in `backend/.env`:
 
@@ -300,7 +303,7 @@ DNS_SERVERS=1.1.1.1,8.8.8.8
 
 This setting applies only to the backend process. It does not change system DNS settings or replace Atlas Network Access rules. Keep database credentials, administrator passwords and JWT secrets in environment variables; `.env` files are excluded from Git.
 
-### ??? Local MongoDB Replica Set
+### 🖥️ Local MongoDB Replica Set
 
 After installing MongoDB Community Server and MongoDB Shell, run from the project root in PowerShell:
 
@@ -323,7 +326,7 @@ MONGODB_URI=mongodb://127.0.0.1:27017/emsam_db?replicaSet=rs0
 
 If another MongoDB service already occupies port 27017, configure that service as a replica set or use a different port consistently. Wait for a primary to be elected before running database setup.
 
-## ?? How the Backend Works
+## 🧩 How the Backend Works
 
 | File | Purpose |
 |---|---|
@@ -339,13 +342,9 @@ If another MongoDB service already occupies port 27017, configure that service a
 
 For example, registration uses `User.create(...)` to save a document; login uses `User.findOne({ email })` to retrieve it. Unique indexes prevent duplicate emails, paper filenames and result combinations (index number + stream + year). Password hashes are excluded from API responses.
 
-## ?? Notes for Existing MySQL Projects
-
-This migration changes the application code and seeds the included project data. It does **not** copy accounts, announcements, messages or uploaded-paper records previously added to a MySQL database. Keep that database and the old SQL exports until any additional data has been migrated separately. Existing MySQL-era sessions require a new login because MongoDB uses different account IDs.
-
 ---
 
-## ?? Tests & Build
+## 🧪 Tests & Build
 
 ```powershell
 cd backend
@@ -362,7 +361,7 @@ npm run build
 
 ---
 
-## ?? Deployment Configuration
+## 🚢 Deployment Configuration
 
 Set `MONGODB_URI`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` and `FRONTEND_URL` on the backend host. Run `npm run db:setup` against the intended MongoDB database, then `npm start`. Set `VITE_API_URL` on the frontend host and rebuild the frontend. Keep `backend/uploads/papers` on persistent storage for uploaded PDFs. Updating local code does not update an existing deployed website.
 
@@ -372,10 +371,10 @@ See the [Mongoose schema guide](https://mongoosejs.com/docs/guide.html) and [tra
 
 <div align="center">
 
-**?? Engineering & Medical Students Association of Mullaitivu**
+**🎓 Engineering & Medical Students Association of Mullaitivu**
 
 Supporting students through Dreamway, Pathfinder and educational resources.
 
-[?? Website](https://emsam-website.vercel.app) ? [?? GitHub](https://github.com/Yathi2401/EMSAM-Website)
+[🌐 Website](https://emsam-website.vercel.app) · [💻 GitHub](https://github.com/Yathi2401/EMSAM-Website)
 
 </div>
