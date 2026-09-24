@@ -3,7 +3,7 @@ import { FaCalendarAlt } from "react-icons/fa";
 import PageHero from "../components/PageHero";
 import SiteFooter from "../components/SiteFooter";
 import SiteNavbar from "../components/SiteNavbar";
-import { apiRequest } from "../services/api";
+import { apiRequest, serverFileUrl } from "../services/api";
 import "./Announcements.css";
 
 function formatDate(value) {
@@ -18,11 +18,13 @@ function formatDate(value) {
 function Announcements() {
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     apiRequest("/announcements")
       .then(setItems)
-      .catch((requestError) => setError(requestError.message));
+      .catch((requestError) => setError(requestError.message))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -45,11 +47,12 @@ function Announcements() {
             </div>
 
             {error && <p className="form-status error">{error}</p>}
+            {loading && <p className="loading-text">Loading announcements...</p>}
 
             <div className="announcement-grid">
               {items.map((item) => (
                 <article className="announcement-card" key={item.id}>
-                  {item.image_url && <img src={item.image_url} alt="" />}
+                  {item.image_url && <img src={serverFileUrl(item.image_url)} alt="" />}
                   <div className="announcement-content">
                     <div className="announcement-meta">
                       <span>{item.category}</span>
@@ -62,8 +65,8 @@ function Announcements() {
               ))}
             </div>
 
-            {!error && items.length === 0 && (
-              <p className="empty-text">No announcements are available. Start the backend and run the database setup.</p>
+            {!loading && !error && items.length === 0 && (
+              <p className="empty-text">No announcements are available yet.</p>
             )}
           </div>
         </section>

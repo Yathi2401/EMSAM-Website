@@ -1,145 +1,64 @@
-import mysql from "mysql2/promise";
-import bcrypt from "bcryptjs";
-import dotenv from "dotenv";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+﻿import bcrypt from "bcryptjs";
+import fs from "node:fs";
+import { pathToFileURL } from "node:url";
+import mongoose, { connectDatabase } from "../config/db.js";
+import { User, Announcement, PastPaper, ExamResult, initializeModels } from "../models/index.js";
 
-dotenv.config();
+const readData = name => JSON.parse(fs.readFileSync(new URL(`../data/${name}`, import.meta.url), "utf8"));
+const missingNumber = value => value == null || value === "_" ? null : Number(value);
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const backendRoot = path.resolve(__dirname, "..");
-
-const databaseName = process.env.DB_NAME || "emsam_db";
-
-const connection = await mysql.createConnection({
-  host: process.env.DB_HOST || "localhost",
-  port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  multipleStatements: true,
-});
-
-try {
-  console.log(`Creating database '${databaseName}' if required...`);
-  await connection.query(`CREATE DATABASE IF NOT EXISTS \`${databaseName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
-  await connection.query(`USE \`${databaseName}\``);
-
-  const schemaSql = fs.readFileSync(path.join(backendRoot, "database", "schema.sql"), "utf8");
-  await connection.query(schemaSql);
-
-  const adminEmail = process.env.ADMIN_EMAIL || "admin@emsam.lk";
-  const adminPassword = process.env.ADMIN_PASSWORD || "Admin@123";
-  const adminHash = await bcrypt.hash(adminPassword, 10);
-  const studentHash = await bcrypt.hash("Student@123", 10);
-
-  await connection.query(
-    `INSERT INTO users (full_name, email, phone, school, stream, al_year, password_hash, role)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'admin')
-     ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), password_hash = VALUES(password_hash), role = 'admin'`,
-    ["EMSAM Administrator", adminEmail, "", "EMSAM", "Other", 2026, adminHash]
-  );
-
-  await connection.query(
-    `INSERT INTO users (full_name, email, phone, school, stream, al_year, password_hash, role)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'student')
-     ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), password_hash = VALUES(password_hash)`,
-    ["Demo Student", "student@emsam.lk", "0700000000", "Demo School", "Physical Science", 2026, studentHash]
-  );
+export async function seedDatabase() {
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword || adminPassword === "Admin@123" || adminPassword.length < 12 || Buffer.byteLength(adminPassword) > 72) {
+    throw new Error("Set ADMIN_PASSWORD to a unique password of at least 12 characters and at most 72 UTF-8 bytes.");
+  }
+  await initializeModels();
+  const adminEmail = (process.env.ADMIN_EMAIL || "admin@emsam.lk").trim().toLowerCase();
+  // Re-running setup never resets an existing user's password or role.
+  await User.updateOne({ email: adminEmail }, { $setOnInsert: {
+    full_name: "EMSAM Administrator", email: adminEmail, school: "EMSAM", stream: "Other",
+    al_year: 2026, password_hash: await bcrypt.hash(adminPassword, 10), role: "admin",
+  } }, { upsert: true, runValidators: true });
 
   const announcements = [
-    {
-      category: "Dreamway",
-      title: "Dreamway 2026 Results Published",
-      summary: "The final results for the 2026 Dreamway Physical Science and Biological Science examinations are now available through the result search page.",
-      eventDate: "2026-06-12",
-      imageUrl: "/media/dreamway-results-2026.jpg",
-    },
-    {
-      category: "Pathfinder",
-      title: "Pathfinder 2.0 Career Guidance Programme",
-      summary: "EMSAM successfully conducted Pathfinder 2.0 to guide A/L students on university courses, application preferences and career pathways.",
-      eventDate: "2026-05-01",
-      imageUrl: "/media/pathfinder-poster-1.jpg",
-    },
-    {
-      category: "Resources",
-      title: "Dreamway Past Papers 2023–2026 Available",
-      summary: "Students can now search and download Dreamway question papers and marking schemes for Biology, Chemistry, Physics and Combined Mathematics.",
-      eventDate: "2026-07-10",
-      imageUrl: "/media/5-years-celebration.jpg",
-    },
+    { category: "Dreamway", title: "Dreamway 2026 Results Published", summary: "The final results for the 2026 Dreamway Physical Science and Biological Science examinations are now available through the result search page.", event_date: "2026-06-12", image_url: "/media/dreamway-results-2026.jpg" },
+    { category: "Pathfinder", title: "Pathfinder 2.0 Career Guidance Programme", summary: "EMSAM successfully conducted Pathfinder 2.0 to guide A/L students on university courses, application preferences and career pathways.", event_date: "2026-05-01", image_url: "/media/pathfinder-poster-1.jpg" },
+    { category: "Resources", title: "Dreamway Past Papers 2023–2026 Available", summary: "Students can now search and download Dreamway question papers and marking schemes for Biology, Chemistry, Physics and Combined Mathematics.", event_date: "2026-07-10", image_url: "/media/5-years-celebration.jpg" },
   ];
-
   for (const item of announcements) {
-    const [existing] = await connection.query("SELECT id FROM announcements WHERE title = ?", [item.title]);
-    if (existing.length === 0) {
-      await connection.query(
-        `INSERT INTO announcements (category, title, summary, event_date, image_url)
-         VALUES (?, ?, ?, ?, ?)`,
-        [item.category, item.title, item.summary, item.eventDate, item.imageUrl]
-      );
-    }
+    await Announcement.updateOne({ title: item.title }, { $setOnInsert: item }, { upsert: true, runValidators: true });
   }
-
-  const papers = JSON.parse(fs.readFileSync(path.join(backendRoot, "data", "papers.json"), "utf8"));
+  const papers = readData("papers.json");
   for (const paper of papers) {
-    await connection.query(
-      `INSERT INTO past_papers
-       (title, subject, stream, exam_year, paper_type, file_name, file_url, is_published)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         title = VALUES(title), subject = VALUES(subject), stream = VALUES(stream),
-         exam_year = VALUES(exam_year), paper_type = VALUES(paper_type),
-         file_url = VALUES(file_url), is_published = VALUES(is_published)`,
-      [paper.title, paper.subject, paper.stream, paper.year, paper.paper_type, paper.file_name, paper.file_url, paper.is_published]
-    );
+    await PastPaper.updateOne({ file_name: paper.file_name }, { $setOnInsert: {
+      title: paper.title, subject: paper.subject, stream: paper.stream, exam_year: paper.year,
+      paper_type: paper.paper_type, file_name: paper.file_name, file_url: paper.file_url, is_published: Boolean(paper.is_published),
+    } }, { upsert: true, runValidators: true });
   }
-
-  const results = JSON.parse(fs.readFileSync(path.join(backendRoot, "data", "results-2026.json"), "utf8"));
+  const results = readData("results-2026.json");
   for (const result of results) {
-    await connection.query(
-      `INSERT INTO exam_results
-       (full_name, index_number, stream,
-        subject1_name, subject1_mark, subject1_grade,
-        subject2_name, subject2_mark, subject2_grade,
-        subject3_name, subject3_mark, subject3_grade,
-        z_average, rank_number, exam_year)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-        full_name = VALUES(full_name),
-        subject1_mark = VALUES(subject1_mark), subject1_grade = VALUES(subject1_grade),
-        subject2_mark = VALUES(subject2_mark), subject2_grade = VALUES(subject2_grade),
-        subject3_mark = VALUES(subject3_mark), subject3_grade = VALUES(subject3_grade),
-        z_average = VALUES(z_average), rank_number = VALUES(rank_number)`,
-      [
-        result.full_name,
-        result.index_number,
-        result.stream,
-        result.subject1_name,
-        result.subject1_mark,
-        result.subject1_grade,
-        result.subject2_name,
-        result.subject2_mark,
-        result.subject2_grade,
-        result.subject3_name,
-        result.subject3_mark,
-        result.subject3_grade,
-        result.z_average === "_" ? null : result.z_average,
-        result.rank === "_" ? null : result.rank,
-        result.exam_year,
-      ]
+    const { rank, ...fields } = result;
+    const record = { ...fields, index_number: String(result.index_number),
+      z_average: missingNumber(result.z_average), rank_number: missingNumber(rank) };
+    await ExamResult.updateOne(
+      { index_number: record.index_number, stream: record.stream, exam_year: record.exam_year },
+      { $setOnInsert: record }, { upsert: true, runValidators: true }
     );
   }
+  return { papers: papers.length, results: results.length, adminEmail };
+}
 
-  console.log("Database setup completed successfully.");
-  console.log(`Admin login: ${adminEmail} / ${adminPassword}`);
-  console.log("Demo student: student@emsam.lk / Student@123");
-  console.log(`Seeded ${papers.length} past papers and ${results.length} result records.`);
-} catch (error) {
-  console.error("Database setup failed:", error.message);
-  process.exitCode = 1;
-} finally {
-  await connection.end();
+// Keep the seed function importable by integration tests without running setup.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    await connectDatabase();
+    const seeded = await seedDatabase();
+    console.log(`MongoDB setup complete: ${seeded.papers} papers and ${seeded.results} results checked.`);
+    console.log(`Administrator: ${seeded.adminEmail}. Existing accounts and records were preserved.`);
+  } catch (error) {
+    console.error("MongoDB setup failed:", error.message);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.disconnect();
+  }
 }

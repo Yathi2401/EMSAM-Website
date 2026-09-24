@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
+import { User } from "../models/index.js";
 
-export function requireAuth(req, res, next) {
+export async function requireAuth(req, res, next) {
   const header = req.headers.authorization;
 
   if (!header || !header.startsWith("Bearer ")) {
@@ -9,12 +11,24 @@ export function requireAuth(req, res, next) {
 
   const token = header.split(" ")[1];
 
+  let claims;
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
-    next();
+    claims = jwt.verify(token, process.env.JWT_SECRET);
+    if (!mongoose.isObjectIdOrHexString(claims.id)) throw new Error("Invalid account ID");
   } catch {
     return res.status(401).json({ message: "Your session is invalid or expired." });
   }
+
+  try {
+    const user = await User.findById(claims.id);
+    if (!user || !user.is_active) {
+      return res.status(401).json({ message: "Your account is unavailable. Please log in again." });
+    }
+    req.user = user;
+  } catch (error) {
+    return next(error);
+  }
+  return next();
 }
 
 export function requireAdmin(req, res, next) {

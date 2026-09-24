@@ -6,12 +6,14 @@ echo =============================================
 echo EMSAM Full-Stack Project - First Time Setup
 echo =============================================
 echo.
-echo Make sure MySQL or XAMPP MySQL is running.
+echo Configure backend/.env with MONGODB_URI, JWT_SECRET and ADMIN_PASSWORD.
+echo Use MongoDB Atlas or a local replica set for Excel imports.
 echo.
 
 cd backend
 if not exist .env copy .env.example .env
 call npm install
+if errorlevel 1 goto error
 call npm run db:setup
 if errorlevel 1 goto error
 
@@ -29,6 +31,6 @@ exit /b 0
 
 :error
 echo.
-echo Setup failed. Check that MySQL is running and the backend .env details are correct.
+echo Setup failed. Check MongoDB connectivity and backend/.env settings.
 pause
 exit /b 1

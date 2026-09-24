@@ -1,75 +1,66 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import pool from "../config/db.js";
+import { User } from "../models/index.js";
 import { requireAuth } from "../middleware/auth.js";
+import { examStreams, validText, validEmail, validYear } from "../utils/validation.js";
 
 const router = express.Router();
 
 router.post("/register", async (req, res) => {
-  const { fullName, email, phone, school, stream, alYear, password } = req.body;
+  const { fullName, email, phone, school, stream, alYear, password } = req.body || {};
 
-  if (!fullName || !email || !password) {
-    return res.status(400).json({ message: "Full name, email and password are required." });
+  if (!validText(fullName, 150) || !validEmail(email) || typeof password !== "string" ||
+      !validText(phone, 30, true) || !validText(school, 180, true) ||
+      (stream && ![...examStreams, "Other"].includes(stream)) || (alYear && !validYear(alYear))) {
+    return res.status(400).json({ message: "Provide a valid name, email, password and profile details." });
   }
 
-  if (password.length < 6) {
-    return res.status(400).json({ message: "Password must contain at least 6 characters." });
+  if (password.length < 6 || Buffer.byteLength(password, "utf8") > 72) {
+    return res.status(400).json({ message: "Password must contain at least 6 characters and at most 72 UTF-8 bytes." });
   }
 
   try {
-    const [existing] = await pool.query("SELECT id FROM users WHERE email = ?", [email.toLowerCase()]);
+    const existing = await User.exists({ email: email.toLowerCase().trim() });
 
-    if (existing.length > 0) {
+    if (existing) {
       return res.status(409).json({ message: "An account already exists with this email." });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const [result] = await pool.query(
-      `INSERT INTO users
-       (full_name, email, phone, school, stream, al_year, password_hash, role)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'student')`,
-      [
-        fullName.trim(),
-        email.toLowerCase().trim(),
-        phone || null,
-        school || null,
-        stream || "Other",
-        alYear || null,
-        passwordHash,
-      ]
-    );
+    const result = await User.create({
+      full_name: fullName.trim(), email: email.toLowerCase().trim(),
+      phone: phone || null, school: school || null, stream: stream || "Other",
+      al_year: alYear || undefined, password_hash: passwordHash, role: "student",
+    });
 
     return res.status(201).json({
       message: "Student account created successfully.",
-      userId: result.insertId,
+      userId: result.id,
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "An account already exists with this email." });
+    }
     console.error(error);
     return res.status(500).json({ message: "Unable to create the account." });
   }
 });
 
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password } = req.body || {};
 
-  if (!email || !password) {
+  if (!validEmail(email) || typeof password !== "string" || !password) {
     return res.status(400).json({ message: "Email and password are required." });
   }
 
   try {
-    const [rows] = await pool.query(
-      `SELECT id, full_name, email, password_hash, role, is_active
-       FROM users WHERE email = ?`,
-      [email.toLowerCase().trim()]
-    );
+    const user = await User.findOne({ email: email.toLowerCase().trim() }).select("+password_hash");
 
-    if (rows.length === 0) {
+    if (!user) {
       return res.status(401).json({ message: "Incorrect email or password." });
     }
-
-    const user = rows[0];
 
     if (!user.is_active) {
       return res.status(403).json({ message: "This account has been disabled." });
@@ -105,17 +96,13 @@ router.post("/login", async (req, res) => {
 
 router.get("/me", requireAuth, async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      `SELECT id, full_name, email, phone, school, stream, al_year, role, created_at
-       FROM users WHERE id = ?`,
-      [req.user.id]
-    );
+    const user = await User.findById(req.user.id);
 
-    if (rows.length === 0) {
+    if (!user) {
       return res.status(404).json({ message: "Account not found." });
     }
 
-    return res.json(rows[0]);
+    return res.json(user);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Unable to load the account." });

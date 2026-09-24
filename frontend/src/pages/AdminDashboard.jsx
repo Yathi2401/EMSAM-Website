@@ -19,6 +19,10 @@ function AdminDashboard() {
   const user = getCurrentUser();
   const [summary, setSummary] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [papers, setPapers] = useState([]);
+  const [deleting, setDeleting] = useState(false);
   const [announcement, setAnnouncement] = useState(initialAnnouncement);
   const [paper, setPaper] = useState({ title: "", subject: "", stream: "Both", year: "2026", paperType: "Paper I", file: null });
   const [resultImport, setResultImport] = useState({ stream: "Physical Science", examYear: "2026", file: null });
@@ -26,13 +30,21 @@ function AdminDashboard() {
 
   async function loadDashboard() {
     try {
-      const [summaryData, messageData] = await Promise.all([
+      const [summaryData, messageData, userData, announcementData, paperData] = await Promise.all([
         apiRequest("/admin/summary"),
         apiRequest("/admin/messages"),
+        apiRequest("/admin/users"),
+        apiRequest("/admin/announcements"),
+        apiRequest("/admin/papers"),
       ]);
       setSummary(summaryData);
       setMessages(messageData);
+      setUsers(userData);
+      setAnnouncements(announcementData);
+      setPapers(paperData);
     } catch (error) {
+      if (error.status === 401) navigate("/login", { replace: true });
+      if (error.status === 403) navigate("/dashboard", { replace: true });
       setStatus({ type: "error", message: error.message });
     }
   }
@@ -48,6 +60,20 @@ function AdminDashboard() {
   function logout() {
     clearSession();
     navigate("/");
+  }
+
+  async function deleteItem(resource, item) {
+    if (!window.confirm(`Delete "${item.title}"? This cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      const data = await apiRequest(`/admin/${resource}/${item.id}`, { method: "DELETE" });
+      setStatus({ type: "success", message: data.message });
+      await loadDashboard();
+    } catch (error) {
+      setStatus({ type: "error", message: error.message });
+    } finally {
+      setDeleting(false);
+    }
   }
 
   async function submitAnnouncement(event) {
@@ -68,6 +94,7 @@ function AdminDashboard() {
 
   async function uploadPaper(event) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     if (!paper.file) {
       setStatus({ type: "error", message: "Choose a PDF file." });
       return;
@@ -85,6 +112,7 @@ function AdminDashboard() {
       const data = await apiRequest("/admin/papers", { method: "POST", body: formData });
       setStatus({ type: "success", message: data.message });
       setPaper({ title: "", subject: "", stream: "Both", year: "2026", paperType: "Paper I", file: null });
+      formElement.reset();
       loadDashboard();
     } catch (error) {
       setStatus({ type: "error", message: error.message });
@@ -93,6 +121,7 @@ function AdminDashboard() {
 
   async function importResults(event) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     if (!resultImport.file) {
       setStatus({ type: "error", message: "Choose an Excel results file." });
       return;
@@ -107,6 +136,7 @@ function AdminDashboard() {
       const data = await apiRequest("/admin/results/import", { method: "POST", body: formData });
       setStatus({ type: "success", message: data.message });
       setResultImport({ ...resultImport, file: null });
+      formElement.reset();
       loadDashboard();
     } catch (error) {
       setStatus({ type: "error", message: error.message });
@@ -183,6 +213,37 @@ function AdminDashboard() {
                 <button type="submit">Import Results</button>
               </form>
             </div>
+
+            {[
+              { title: "Manage Announcements", resource: "announcements", items: announcements },
+              { title: "Manage Past Papers", resource: "papers", items: papers },
+            ].map((section) => (
+              <section className="messages-card" key={section.resource}>
+                <h2>{section.title}</h2>
+                <div className="admin-record-list">
+                  {section.items.map((item) => (
+                    <div className="admin-record" key={item.id}>
+                      <span>{item.title}{!item.is_published && " (Unpublished)"}</span>
+                      <button type="button" disabled={deleting} onClick={() => deleteItem(section.resource, item)} aria-label={`Delete ${item.title}`}>Delete</button>
+                    </div>
+                  ))}
+                  {section.items.length === 0 && <p>No records available.</p>}
+                </div>
+              </section>
+            ))}
+
+            <section className="messages-card">
+              <h2>Registered Users</h2>
+              <div className="admin-record-list">
+                {users.map((account) => (
+                  <article className="admin-record" key={account.id}>
+                    <div><strong>{account.full_name}</strong><p>{account.email}</p><p>{account.school || "School not provided"} · {account.stream}</p></div>
+                    <span>{account.role} · {account.is_active ? "Active" : "Disabled"}</span>
+                  </article>
+                ))}
+                {users.length === 0 && <p>No registered users.</p>}
+              </div>
+            </section>
 
             <div className="messages-card">
               <h2>Contact Messages</h2>

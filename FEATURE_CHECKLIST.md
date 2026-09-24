@@ -19,7 +19,7 @@
 
 ## Completed Backend
 - [x] Express API
-- [x] MySQL connection
+- [x] MongoDB connection through Mongoose
 - [x] Student registration and secure password hashing
 - [x] JWT login
 - [x] Student profile endpoint
@@ -31,7 +31,7 @@
 - [x] Excel result import
 - [x] Admin dashboard statistics
 - [x] Database setup and seed script
-- [x] Complete SQL import file
+- [x] MongoDB models, unique indexes and repeatable seed script
 
 ## Included Data
 - [x] 48 past-paper PDFs

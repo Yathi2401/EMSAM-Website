@@ -120,8 +120,8 @@ function Results() {
                   </div>
 
                   <div className="result-summary">
-                    <div><span>Z Average</span><strong>{Number(result.z_average).toFixed(4)}</strong></div>
-                    <div><span>Rank</span><strong>{result.rank_number}</strong></div>
+                    <div><span>Z Average</span><strong>{result.z_average == null ? "Not available" : Number(result.z_average).toFixed(4)}</strong></div>
+                    <div><span>Rank</span><strong>{result.rank_number ?? "Not available"}</strong></div>
                   </div>
                 </div>
               )}

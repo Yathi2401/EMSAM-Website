@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+.mongo-data/
+backend/uploads/temp/
 
 # Frontend build files
 frontend/dist/

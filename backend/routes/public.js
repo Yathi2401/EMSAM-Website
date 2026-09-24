@@ -1,5 +1,6 @@
 import express from "express";
-import pool from "../config/db.js";
+import { Announcement, PastPaper, ExamResult, ContactMessage } from "../models/index.js";
+import { examStreams, validText, validEmail, validYear } from "../utils/validation.js";
 
 const router = express.Router();
 
@@ -9,12 +10,8 @@ router.get("/health", (_req, res) => {
 
 router.get("/announcements", async (_req, res) => {
   try {
-    const [rows] = await pool.query(
-      `SELECT id, category, title, summary, event_date, image_url, created_at
-       FROM announcements
-       WHERE is_published = TRUE
-       ORDER BY COALESCE(event_date, created_at) DESC, id DESC`
-    );
+    const rows = await Announcement.find({ is_published: true });
+    rows.sort((a, b) => new Date(b.event_date || b.created_at) - new Date(a.event_date || a.created_at) || b.id.localeCompare(a.id));
 
     res.json(rows);
   } catch (error) {
@@ -25,42 +22,34 @@ router.get("/announcements", async (_req, res) => {
 
 router.get("/papers", async (req, res) => {
   const { subject, year, type, stream, search } = req.query;
-  const conditions = ["is_published = TRUE"];
-  const values = [];
+  if (![subject, type, stream, search].every(value => validText(value, 255, true)) || (year !== undefined && !validYear(year))) {
+    return res.status(400).json({ message: "Provide valid search filters and exam year." });
+  }
+  const filter = { is_published: true };
 
   if (subject) {
-    conditions.push("subject = ?");
-    values.push(subject);
+    filter.subject = subject;
   }
 
   if (year) {
-    conditions.push("exam_year = ?");
-    values.push(Number(year));
+    filter.exam_year = Number(year);
   }
 
   if (type) {
-    conditions.push("paper_type = ?");
-    values.push(type);
+    filter.paper_type = type;
   }
 
   if (stream) {
-    conditions.push("(stream = ? OR stream = 'Both')");
-    values.push(stream);
+    filter.stream = { $in: [stream, "Both"] };
   }
 
   if (search) {
-    conditions.push("(title LIKE ? OR subject LIKE ?)");
-    values.push(`%${search}%`, `%${search}%`);
+    const literal = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    filter.$or = [{ title: { $regex: literal, $options: "i" } }, { subject: { $regex: literal, $options: "i" } }];
   }
 
   try {
-    const [rows] = await pool.query(
-      `SELECT id, title, subject, stream, exam_year, paper_type, file_name, file_url
-       FROM past_papers
-       WHERE ${conditions.join(" AND ")}
-       ORDER BY exam_year DESC, subject ASC, title ASC`,
-      values
-    );
+    const rows = await PastPaper.find(filter).sort({ exam_year: -1, subject: 1, title: 1 });
 
     res.json(rows);
   } catch (error) {
@@ -72,28 +61,18 @@ router.get("/papers", async (req, res) => {
 router.get("/results", async (req, res) => {
   const { indexNumber, stream, year = 2026 } = req.query;
 
-  if (!indexNumber || !stream) {
-    return res.status(400).json({ message: "Index number and stream are required." });
+  if (!validText(indexNumber, 30) || !examStreams.includes(stream) || !validYear(year)) {
+    return res.status(400).json({ message: "A valid index number, stream and exam year are required." });
   }
 
   try {
-    const [rows] = await pool.query(
-      `SELECT full_name, index_number, stream,
-              subject1_name, subject1_mark, subject1_grade,
-              subject2_name, subject2_mark, subject2_grade,
-              subject3_name, subject3_mark, subject3_grade,
-              z_average, rank_number, exam_year
-       FROM exam_results
-       WHERE index_number = ? AND stream = ? AND exam_year = ?
-       LIMIT 1`,
-      [indexNumber.trim(), stream, Number(year)]
-    );
+    const result = await ExamResult.findOne({ index_number: indexNumber.trim(), stream, exam_year: Number(year) });
 
-    if (rows.length === 0) {
+    if (!result) {
       return res.status(404).json({ message: "No result was found for the provided details." });
     }
 
-    res.json(rows[0]);
+    res.json(result);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Unable to search results." });
@@ -101,18 +80,14 @@ router.get("/results", async (req, res) => {
 });
 
 router.post("/contact", async (req, res) => {
-  const { fullName, email, subject, message } = req.body;
+  const { fullName, email, subject, message } = req.body || {};
 
-  if (!fullName || !email || !subject || !message) {
-    return res.status(400).json({ message: "Please complete all contact form fields." });
+  if (!validText(fullName, 150) || !validEmail(email) || !validText(subject, 200) || !validText(message, 10000)) {
+    return res.status(400).json({ message: "Please provide a valid name, email, subject and message (up to 10,000 characters)." });
   }
 
   try {
-    await pool.query(
-      `INSERT INTO contact_messages (full_name, email, subject, message)
-       VALUES (?, ?, ?, ?)`,
-      [fullName.trim(), email.toLowerCase().trim(), subject.trim(), message.trim()]
-    );
+    await ContactMessage.create({ full_name: fullName.trim(), email: email.toLowerCase().trim(), subject: subject.trim(), message: message.trim() });
 
     res.status(201).json({ message: "Your message has been sent to EMSAM." });
   } catch (error) {

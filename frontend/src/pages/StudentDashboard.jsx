@@ -20,7 +20,10 @@ function StudentDashboard() {
 
     apiRequest("/auth/me")
       .then(setProfile)
-      .catch((requestError) => setError(requestError.message));
+      .catch((requestError) => {
+        if (requestError.status === 401) navigate("/login", { replace: true });
+        setError(requestError.message);
+      });
   }, []);
 
   function logout() {
@@ -56,7 +59,7 @@ function StudentDashboard() {
             <div className="profile-card">
               <h2>Your Profile</h2>
               {!profile ? (
-                <p className="loading-text">Loading account information...</p>
+                <p className="loading-text">{error ? "Account information could not be loaded." : "Loading account information..."}</p>
               ) : (
                 <div className="profile-grid">
                   <div><span>Full Name</span><strong>{profile.full_name}</strong></div>

@@ -64,11 +64,6 @@ function Login() {
             </form>
 
             <p className="auth-switch">Do not have an account? <Link to="/register">Register here</Link></p>
-            <div className="demo-login">
-              <strong>Demo accounts after database setup</strong>
-              <span>Admin: admin@emsam.lk / Admin@123</span>
-              <span>Student: student@emsam.lk / Student@123</span>
-            </div>
           </div>
         </section>
       </main>

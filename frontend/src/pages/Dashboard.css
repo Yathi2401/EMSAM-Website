@@ -37,6 +37,11 @@
 .admin-form button { width: 100%; margin-top: 18px; padding: 12px; border: 0; border-radius: 7px; color: #071b33; background: #d8a63a; font-size: 12px; font-weight: 900; cursor: pointer; }
 .admin-two-fields { display: grid; grid-template-columns: 0.6fr 1.4fr; gap: 10px; }
 .message-list { display: grid; gap: 12px; }
+.admin-record-list { display: grid; gap: 12px; max-height: 480px; overflow: auto; }
+.admin-record { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; border: 1px solid #dfe7ee; border-radius: 10px; overflow-wrap: anywhere; }
+.admin-record p { margin: 6px 0 0; color: #647587; }
+.admin-record button { padding: 9px 14px; border: 1px solid #b42318; border-radius: 7px; color: #b42318; background: #fff; cursor: pointer; }
+.admin-record button:disabled { opacity: 0.5; cursor: wait; }
 .message-list article { padding: 17px; border: 1px solid #e0e7ee; border-radius: 10px; background: #f8fafc; }
 .message-list article > div { display: flex; justify-content: space-between; gap: 15px; }
 .message-list strong { color: #071b33; font-size: 12px; }

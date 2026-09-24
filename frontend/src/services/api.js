@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
 const SERVER_URL = API_URL.replace(/\/api\/?$/, "");
 
 export async function apiRequest(path, options = {}) {
@@ -22,11 +22,14 @@ export async function apiRequest(path, options = {}) {
   try {
     data = await response.json();
   } catch {
-    data = { message: "The server returned an invalid response." };
+    throw new Error("The server returned an invalid response.");
   }
 
   if (!response.ok) {
-    throw new Error(data.message || "Request failed.");
+    if (response.status === 401 && token && path !== "/auth/login") clearSession();
+    const error = new Error(data.message || "Request failed.");
+    error.status = response.status;
+    throw error;
   }
 
   return data;
@@ -46,7 +49,17 @@ export function saveSession(token, user) {
 
 export function getCurrentUser() {
   const value = localStorage.getItem("emsamUser");
-  return value ? JSON.parse(value) : null;
+  try {
+    const user = value ? JSON.parse(value) : null;
+    if (!user || typeof user !== "object" || !user.id || !["student", "admin"].includes(user.role) || !localStorage.getItem("emsamToken")) {
+      clearSession();
+      return null;
+    }
+    return user;
+  } catch {
+    clearSession();
+    return null;
+  }
 }
 
 export function clearSession() {
