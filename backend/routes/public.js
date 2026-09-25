@@ -1,3 +1,4 @@
+import { rateLimit } from "../middleware/rateLimit.js";
 import express from "express";
 import { Announcement, PastPaper, ExamResult, ContactMessage } from "../models/index.js";
 import { examStreams, validText, validEmail, validYear } from "../utils/validation.js";
@@ -74,7 +75,8 @@ router.get("/papers", async (req, res) => {
   }
 });
 
-router.get("/results", async (req, res) => {
+router.get("/results", rateLimit("results", 60), async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
   const { indexNumber, stream, year = 2026 } = req.query;
 
   if (!validText(indexNumber, 30) || !examStreams.includes(stream) || !validYear(year)) {
@@ -95,7 +97,7 @@ router.get("/results", async (req, res) => {
   }
 });
 
-router.post("/contact", async (req, res) => {
+router.post("/contact", rateLimit("contact", 10), async (req, res) => {
   const { fullName, email, subject, message } = req.body || {};
 
   if (!validText(fullName, 150) || !validEmail(email) || !validText(subject, 200) || !validText(message, 10000)) {

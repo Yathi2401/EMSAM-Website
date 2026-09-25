@@ -17,6 +17,10 @@ const initialAnnouncement = {
 function AdminDashboard() {
   const navigate = useNavigate();
   const user = getCurrentUser();
+  const [busy, setBusy] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [userPage, setUserPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
@@ -46,7 +50,7 @@ function AdminDashboard() {
       if (error.status === 401) navigate("/login", { replace: true });
       if (error.status === 403) navigate("/dashboard", { replace: true });
       setStatus({ type: "error", message: error.message });
-    }
+    } finally { setLoading(false); }
   }
 
   useEffect(() => {
@@ -143,6 +147,27 @@ function AdminDashboard() {
     }
   }
 
+  async function submitOnce(event, handler) {
+    event.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    try { await handler(event); } finally { setBusy(false); }
+  }
+
+  async function updateMessage(id, value) {
+    setBusy(true);
+    try {
+      await apiRequest(`/admin/messages/${id}`, { method: "PATCH", body: JSON.stringify({ status: value }) });
+      await loadDashboard();
+      setStatus({ type: "success", message: "Message status updated." });
+    } catch (error) { setStatus({ type: "error", message: error.message }); }
+    finally { setBusy(false); }
+  }
+
+  const matchingUsers = users.filter(account => `${account.full_name} ${account.email} ${account.school || ""}`.toLowerCase().includes(userSearch.toLowerCase()));
+  const pageCount = Math.max(1, Math.ceil(matchingUsers.length / 10));
+  const currentPage = Math.min(userPage, pageCount);
+
   return (
     <div className="dashboard-page admin-dashboard">
       <SiteNavbar />
@@ -160,7 +185,8 @@ function AdminDashboard() {
 
         <section className="dashboard-content">
           <div className="section-shell">
-            {status.message && <p className={`form-status ${status.type}`}>{status.message}</p>}
+            {loading && <p role="status">Loading dashboard...</p>}
+            {status.message && <p role="status" className={`form-status ${status.type}`}>{status.message}</p>}
 
             <div className="admin-summary-grid">
               <div><FaUsers /><span>Students</span><strong>{summary?.students ?? "—"}</strong></div>
@@ -170,7 +196,7 @@ function AdminDashboard() {
             </div>
 
             <div className="admin-forms-grid">
-              <form className="admin-form" onSubmit={submitAnnouncement}>
+              <form className="admin-form" onSubmit={(event) => submitOnce(event, submitAnnouncement)}>
                 <h2>Publish Announcement</h2>
                 <label>Category</label>
                 <select value={announcement.category} onChange={(e) => setAnnouncement({ ...announcement, category: e.target.value })}><option>Dreamway</option><option>Pathfinder</option><option>Results</option><option>Resources</option><option>General</option></select>
@@ -182,10 +208,10 @@ function AdminDashboard() {
                 <input type="date" value={announcement.eventDate} onChange={(e) => setAnnouncement({ ...announcement, eventDate: e.target.value })} />
                 <label>Frontend Image Path</label>
                 <input placeholder="/media/image-name.jpg" value={announcement.imageUrl} onChange={(e) => setAnnouncement({ ...announcement, imageUrl: e.target.value })} />
-                <button type="submit">Publish</button>
+                <button type="submit" disabled={busy}>Publish</button>
               </form>
 
-              <form className="admin-form" onSubmit={uploadPaper}>
+              <form className="admin-form" onSubmit={(event) => submitOnce(event, uploadPaper)}>
                 <h2>Upload Past Paper</h2>
                 <label>Title</label>
                 <input value={paper.title} onChange={(e) => setPaper({ ...paper, title: e.target.value })} required />
@@ -199,10 +225,10 @@ function AdminDashboard() {
                 </div>
                 <label>PDF File</label>
                 <input type="file" accept="application/pdf" onChange={(e) => setPaper({ ...paper, file: e.target.files[0] })} required />
-                <button type="submit">Upload Paper</button>
+                <button type="submit" disabled={busy}>Upload Paper</button>
               </form>
 
-              <form className="admin-form" onSubmit={importResults}>
+              <form className="admin-form" onSubmit={(event) => submitOnce(event, importResults)}>
                 <h2>Import Results</h2>
                 <label>Stream</label>
                 <select value={resultImport.stream} onChange={(e) => setResultImport({ ...resultImport, stream: e.target.value })}><option>Physical Science</option><option>Biological Science</option></select>
@@ -210,7 +236,7 @@ function AdminDashboard() {
                 <input type="number" value={resultImport.examYear} onChange={(e) => setResultImport({ ...resultImport, examYear: e.target.value })} />
                 <label>Excel File</label>
                 <input type="file" accept=".xlsx,.xls" onChange={(e) => setResultImport({ ...resultImport, file: e.target.files[0] })} required />
-                <button type="submit">Import Results</button>
+                <button type="submit" disabled={busy}>Import Results</button>
               </form>
             </div>
 
@@ -234,14 +260,22 @@ function AdminDashboard() {
 
             <section className="messages-card">
               <h2>Registered Users</h2>
+              <label htmlFor="user-search">Search by name, email or school</label>
+              <input id="user-search" className="user-search" type="search" value={userSearch} onChange={event => { setUserSearch(event.target.value); setUserPage(1); }} />
+              <p>{matchingUsers.length} matching users</p>
               <div className="admin-record-list">
-                {users.map((account) => (
+                {matchingUsers.slice((currentPage - 1) * 10, currentPage * 10).map((account) => (
                   <article className="admin-record" key={account.id}>
                     <div><strong>{account.full_name}</strong><p>{account.email}</p><p>{account.school || "School not provided"} · {account.stream}</p></div>
                     <span>{account.role} · {account.is_active ? "Active" : "Disabled"}</span>
                   </article>
                 ))}
-                {users.length === 0 && <p>No registered users.</p>}
+                {matchingUsers.length === 0 && <p>No matching users.</p>}
+                <nav className="user-pagination" aria-label="User pages">
+                  <button type="button" disabled={currentPage === 1} onClick={() => setUserPage(currentPage - 1)}>Previous</button>
+                  <span>Page {currentPage} of {pageCount}</span>
+                  <button type="button" disabled={currentPage === pageCount} onClick={() => setUserPage(currentPage + 1)}>Next</button>
+                </nav>
               </div>
             </section>
 
@@ -253,6 +287,10 @@ function AdminDashboard() {
                     <div><strong>{message.full_name}</strong><span>{message.email}</span></div>
                     <h3>{message.subject}</h3>
                     <p>{message.message}</p>
+                    <label htmlFor={`status-${message.id}`}>Status</label>
+                    <select id={`status-${message.id}`} value={message.status} disabled={busy} onChange={event => updateMessage(message.id, event.target.value)}>
+                      <option value="new">New</option><option value="read">Read</option><option value="replied">Replied</option>
+                    </select>
                   </article>
                 ))}
                 {messages.length === 0 && <p className="empty-text">No contact messages.</p>}

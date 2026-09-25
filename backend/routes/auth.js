@@ -1,3 +1,4 @@
+import { rateLimit } from "../middleware/rateLimit.js";
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -7,7 +8,7 @@ import { examStreams, validText, validEmail, validYear } from "../utils/validati
 
 const router = express.Router();
 
-router.post("/register", async (req, res) => {
+router.post("/register", rateLimit("register", 20), async (req, res) => {
   const { fullName, email, phone, school, stream, alYear, password } = req.body || {};
 
   if (!validText(fullName, 150) || !validEmail(email) || typeof password !== "string" ||
@@ -16,8 +17,8 @@ router.post("/register", async (req, res) => {
     return res.status(400).json({ message: "Provide a valid name, email, password and profile details." });
   }
 
-  if (password.length < 6 || Buffer.byteLength(password, "utf8") > 72) {
-    return res.status(400).json({ message: "Password must contain at least 6 characters and at most 72 UTF-8 bytes." });
+  if (password.length < 8 || Buffer.byteLength(password, "utf8") > 72) {
+    return res.status(400).json({ message: "Password must contain at least 8 characters and at most 72 UTF-8 bytes." });
   }
 
   try {
@@ -48,7 +49,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", rateLimit("login", 40), async (req, res) => {
   const { email, password } = req.body || {};
 
   if (!validEmail(email) || typeof password !== "string" || !password) {

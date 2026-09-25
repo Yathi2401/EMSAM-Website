@@ -9,8 +9,8 @@ const missingNumber = value => value == null || value === "_" ? null : Number(va
 
 export async function seedDatabase() {
   const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword || adminPassword === "Admin@123" || adminPassword.length < 12 || Buffer.byteLength(adminPassword) > 72) {
-    throw new Error("Set ADMIN_PASSWORD to a unique password of at least 12 characters and at most 72 UTF-8 bytes.");
+  if (!adminPassword || adminPassword === "Admin@123" || adminPassword.length < 8 || Buffer.byteLength(adminPassword) > 72) {
+    throw new Error("Set ADMIN_PASSWORD to a unique password of at least 8 characters and at most 72 UTF-8 bytes.");
   }
   await initializeModels();
   const adminEmail = (process.env.ADMIN_EMAIL || "admin@emsam.lk").trim().toLowerCase();

@@ -25,7 +25,7 @@ test("MongoDB API, seeding and transactional imports", { timeout: 1200000 }, asy
     if (token) headers.Authorization = `Bearer ${token}`;
     if (body && !(body instanceof FormData)) headers["Content-Type"] = "application/json";
     const res = await fetch(base + path, { method, headers, body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined });
-    return { status: res.status, data: await res.json() };
+    return { headers: res.headers, status: res.status, data: await res.json() };
   }
   let token;
   await t.test("seeds all source records and preserves existing accounts on rerun", async () => {
@@ -91,6 +91,30 @@ test("MongoDB API, seeding and transactional imports", { timeout: 1200000 }, asy
     assert.ok((await download.text()).startsWith("%PDF-"));
     assert.equal((await request(`/admin/papers/${paper.data.id}`, { method: "DELETE", token })).status, 200);
     assert.equal(await PastPaper.countDocuments(), 48);
+  });
+  await t.test("message status requires an admin and validates updates", async () => {
+    const message = await ContactMessage.findOne();
+    const route = `/admin/messages/${message.id}`;
+    assert.equal((await request(route, { method: "PATCH", body: { status: "read" } })).status, 401);
+    assert.equal((await request(route, { method: "PATCH", token, body: { status: "unknown" } })).status, 400);
+    assert.equal((await request(route, { method: "PATCH", token, body: { status: "read" } })).status, 200);
+    assert.equal((await ContactMessage.findById(message.id)).status, "read");
+    assert.equal((await request("/admin/summary", { token })).data.newMessages, 0);
+  });
+  await t.test("registration rejects short passwords and result requests are limited atomically", async () => {
+    const registered = await request("/auth/register", { method: "POST", body: { fullName: "Short Password", email: "short@example.test", password: "short12" } });
+    assert.equal(registered.status, 400);
+    const accepted = await request("/auth/register", { method: "POST", body: { fullName: "Eight Characters", email: "eight@example.test", password: "Eight123" } });
+    assert.equal(accepted.status, 201);
+    await mongoose.connection.collection("request_limits").deleteMany({});
+    const responses = await Promise.all(Array.from({ length: 65 }, () => request("/results")));
+    assert.equal(responses.filter(response => response.status === 429).length, 5);
+    assert.equal(responses.filter(response => response.status === 400).length, 60);
+    assert.ok(Number(responses.find(response => response.status === 429).headers.get("retry-after")) > 0);
+    const counters = await mongoose.connection.collection("request_limits").find().toArray();
+    assert.equal(counters.length, 1);
+    assert.equal(counters[0].count, 65);
+    assert.match(counters[0]._id, /^[a-f0-9]{64}$/);
   });
   function importForm(bytes, stream) {
     const form = new FormData();

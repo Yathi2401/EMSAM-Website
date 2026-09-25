@@ -99,6 +99,17 @@ router.get("/messages", async (_req, res) => {
   }
 });
 
+router.patch("/messages/:id", async (req, res, next) => {
+  if (!mongoose.isObjectIdOrHexString(req.params.id) || !["new", "read", "replied"].includes(req.body?.status)) {
+    return res.status(400).json({ message: "Provide a valid message ID and status." });
+  }
+  try {
+    const message = await ContactMessage.findByIdAndUpdate(req.params.id, { $set: { status: req.body.status } }, { new: true, runValidators: true });
+    if (!message) return res.status(404).json({ message: "Message not found." });
+    res.json({ message: "Message status updated." });
+  } catch (error) { next(error); }
+});
+
 router.get("/users", async (_req, res) => {
   try {
     const rows = await User.find().sort({ created_at: -1 });

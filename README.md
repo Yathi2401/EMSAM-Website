@@ -258,7 +258,7 @@ EMSAM-Website
 
 1. Copy `backend/.env.example` to `backend/.env` if it does not exist.
 2. Set `MONGODB_URI` to your MongoDB connection string, including the database name `emsam_db`.
-3. Set `JWT_SECRET` to a long random secret and `ADMIN_PASSWORD` to a unique password of at least 12 characters. Set `ADMIN_EMAIL` to your preferred administrator email.
+3. Set `JWT_SECRET` to a long random secret and `ADMIN_PASSWORD` to a unique password of at least 8 characters. Set `ADMIN_EMAIL` to your preferred administrator email.
 4. Run:
 
 ```powershell

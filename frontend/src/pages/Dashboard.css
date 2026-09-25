@@ -59,3 +59,17 @@
   .dashboard-content { padding: 65px 20px; }
   .dashboard-service-grid, .admin-summary-grid, .admin-forms-grid, .profile-grid { grid-template-columns: 1fr; }
 }
+
+.user-search { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccd8e2; border-radius: 7px; }
+.user-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.user-pagination button, .message-list select { min-height: 44px; padding: 8px 12px; }
+.message-list label { display: block; margin: 12px 0 6px; }
+.admin-form button:disabled { opacity: .6; cursor: wait; }
+.admin-form, .messages-card, .profile-card, .admin-record > div { min-width: 0; }
+.message-list article { overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  .message-list article > div { flex-direction: column; gap: 6px; }
+  .admin-form, .messages-card, .profile-card { padding: 18px; }
+  .admin-two-fields { grid-template-columns: 1fr; }
+  .admin-form input, .admin-form select, .admin-form textarea, .user-search { font-size: 16px; }
+}

@@ -53,7 +53,7 @@ function Results() {
         <PageHero
           eyebrow="Dreamway Examination 2026"
           title="Check Your Results"
-          description="Results are not displayed as a public list. Enter the correct index number and stream to retrieve an individual result securely."
+          description="Results are not displayed as a public list. Enter the correct index number and stream to retrieve an individual result. Anyone with these details can look up a result."
           image="/media/dreamway-results-2026.jpg"
         />
 
@@ -88,7 +88,7 @@ function Results() {
                 {loading ? "Searching..." : "Search Result"}
               </button>
 
-              {status.message && <p className={`form-status ${status.type}`}>{status.message}</p>}
+              {status.message && <p role="status" className={`form-status ${status.type}`}>{status.message}</p>}
             </form>
 
             <div className="result-display">

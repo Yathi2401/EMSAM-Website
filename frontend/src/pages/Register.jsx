@@ -77,7 +77,7 @@ function Register() {
               <div><label>School</label><input name="school" value={form.school} onChange={handleChange} /></div>
               <div><label>A/L Stream</label><select name="stream" value={form.stream} onChange={handleChange} required><option value="">Select stream</option><option>Physical Science</option><option>Biological Science</option><option>Other</option></select></div>
               <div className="full-field"><label>A/L Examination Year</label><input name="alYear" type="number" min="2026" max="2035" value={form.alYear} onChange={handleChange} /></div>
-              <div><label>Password</label><input name="password" type="password" value={form.password} onChange={handleChange} required /></div>
+              <div><label>Password (at least 8 characters)</label><input name="password" type="password" minLength={8} autoComplete="new-password" value={form.password} onChange={handleChange} required /></div>
               <div><label>Confirm Password</label><input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} required /></div>
               <button type="submit" className="full-field" disabled={loading}>{loading ? "Creating account..." : "Create Student Account"}</button>
             </form>

@@ -64,6 +64,7 @@ export const ContactMessage = mongoose.model("ContactMessage", schema({
 }), "contact_messages");
 
 export async function initializeModels() {
+  await mongoose.connection.collection("request_limits").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
   // Create collections and indexes only after connectDatabase() has completed.
   await Promise.all([User, Announcement, PastPaper, ExamResult, ContactMessage].map(async model => {
     await model.createCollection();
