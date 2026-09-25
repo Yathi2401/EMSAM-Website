@@ -61,13 +61,18 @@
 
 .page-hero-image-wrap {
   justify-self: center;
+  max-width: 100%;
+  min-width: 0;
   animation: heroImageIn 0.9s ease both;
 }
 
 .page-hero-image {
+  display: block;
   width: min(340px, 31vw);
+  max-width: 100%;
+  height: auto;
   max-height: 360px;
-  object-fit: cover;
+  object-fit: contain;
   border: 3px solid #d8a63a;
   border-radius: 20px;
   box-shadow: 0 25px 65px rgba(0,0,0,0.42);
