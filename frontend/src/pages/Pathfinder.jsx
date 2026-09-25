@@ -1,3 +1,4 @@
+import PosterImage from "../components/PosterImage";
 import { FaBriefcase, FaFileAlt, FaGraduationCap } from "react-icons/fa";
 import PageHero from "../components/PageHero";
 import SiteFooter from "../components/SiteFooter";
@@ -36,7 +37,7 @@ function Pathfinder() {
         <section className="pathfinder-gallery">
           <div className="section-shell pathfinder-gallery-grid">
             <div className="pathfinder-main-poster">
-              <img src="/media/pathfinder-poster-2.jpg" alt="Pathfinder 2.0 poster" />
+              <PosterImage src="/media/pathfinder-poster-2.jpg" alt="Pathfinder 2.0 poster" />
             </div>
             <div className="pathfinder-photo-grid">
               <img src="/media/seminarphoto1-2026.jpg" alt="Pathfinder seminar activity" />

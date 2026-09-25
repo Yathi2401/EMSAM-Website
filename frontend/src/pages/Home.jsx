@@ -1,3 +1,4 @@
+import PosterImage from "../components/PosterImage";
 import { useEffect, useState } from "react";
 import { FaArrowRight, FaBookOpen, FaCalendarAlt, FaGraduationCap } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -105,7 +106,7 @@ function Home() {
 
             <div className="programme-grid">
               <article className="programme-card dreamway-card">
-                <img src="/media/5-years-celebration.jpg" alt="Five years of Dreamway" />
+                <PosterImage src="/media/5-years-celebration.jpg" alt="Five years of Dreamway" />
                 <div className="programme-card-content">
                   <span><FaBookOpen /> Examination Support</span>
                   <h3>Dreamway</h3>
@@ -118,7 +119,7 @@ function Home() {
               </article>
 
               <article className="programme-card pathfinder-card">
-                <img src="/media/pathfinder-poster-1.jpg" alt="Pathfinder 2.0 programme" />
+                <PosterImage src="/media/pathfinder-poster-1.jpg" alt="Pathfinder 2.0 programme" />
                 <div className="programme-card-content">
                   <span><FaGraduationCap /> Career Guidance</span>
                   <h3>Pathfinder</h3>

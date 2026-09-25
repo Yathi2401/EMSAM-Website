@@ -1,0 +1,22 @@
+.poster-link {
+  position: relative;
+  display: block;
+  min-width: 0;
+  cursor: zoom-in;
+}
+
+.poster-link-hint {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  padding: 6px 10px;
+  border-radius: 5px;
+  background: #071b33;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.pathfinder-main-poster .poster-link { height: 100%; }

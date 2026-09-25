@@ -1,3 +1,4 @@
+import PosterImage from "./PosterImage";
 import "./PageHero.css";
 
 function PageHero({ eyebrow, title, description, image, children }) {
@@ -15,7 +16,7 @@ function PageHero({ eyebrow, title, description, image, children }) {
 
         {image && (
           <div className="page-hero-image-wrap">
-            <img src={image} alt="" className="page-hero-image" />
+            <PosterImage src={image} alt={`${title} image`} className="page-hero-image" />
           </div>
         )}
       </div>

@@ -1,3 +1,4 @@
+import PosterImage from "../components/PosterImage";
 import { FaBookOpen, FaCalendarAlt, FaChartLine, FaClipboardCheck, FaDownload } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import PageHero from "../components/PageHero";
@@ -78,9 +79,9 @@ function Dreamway() {
               <h2>Latest Examination Information</h2>
             </div>
             <div className="dreamway-poster-grid">
-              <figure><img src="/media/dreamway-timetable-2026.jpg" alt="Dreamway 2026 timetable" /><figcaption>Examination Timetable</figcaption></figure>
-              <figure><img src="/media/dreamway-results-2026.jpg" alt="Dreamway 2026 results announcement" /><figcaption>Results Announcement</figcaption></figure>
-              <figure><img src="/media/dreamway-seminar-2026.jpg" alt="Dreamway 2026 seminar details" /><figcaption>Academic Seminar</figcaption></figure>
+              <figure><PosterImage src="/media/dreamway-timetable-2026.jpg" alt="Dreamway 2026 timetable" /><figcaption>Examination Timetable</figcaption></figure>
+              <figure><PosterImage src="/media/dreamway-results-2026.jpg" alt="Dreamway 2026 results announcement" /><figcaption>Results Announcement</figcaption></figure>
+              <figure><PosterImage src="/media/dreamway-seminar-2026.jpg" alt="Dreamway 2026 seminar details" /><figcaption>Academic Seminar</figcaption></figure>
             </div>
           </div>
         </section>

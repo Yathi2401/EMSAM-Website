@@ -1,3 +1,4 @@
+import PosterImage from "../components/PosterImage";
 import { FaHandsHelping, FaLightbulb, FaStar, FaUsers } from "react-icons/fa";
 import PageHero from "../components/PageHero";
 import SiteFooter from "../components/SiteFooter";
@@ -41,7 +42,7 @@ function About() {
                 from school education to higher education and professional development.
               </p>
             </div>
-            <img
+            <PosterImage
               src="/media/5-years-celebration.jpg"
               alt="Five years of Dreamway examination support"
               className="about-journey-image"

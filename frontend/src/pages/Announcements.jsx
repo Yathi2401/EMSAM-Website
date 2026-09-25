@@ -1,3 +1,4 @@
+import PosterImage from "../components/PosterImage";
 import { useEffect, useState } from "react";
 import { FaCalendarAlt } from "react-icons/fa";
 import PageHero from "../components/PageHero";
@@ -52,7 +53,7 @@ function Announcements() {
             <div className="announcement-grid">
               {items.map((item) => (
                 <article className="announcement-card" key={item.id}>
-                  {item.image_url && <img src={serverFileUrl(item.image_url)} alt="" />}
+                  {item.image_url && <PosterImage src={serverFileUrl(item.image_url)} alt={item.title} />}
                   <div className="announcement-content">
                     <div className="announcement-meta">
                       <span>{item.category}</span>
