@@ -15,6 +15,7 @@ const galleryImages = [
 ];
 
 function Home() {
+  const [logoPlaying, setLogoPlaying] = useState(true);
   const [announcements, setAnnouncements] = useState([]);
 
   useEffect(() => {
@@ -59,10 +60,14 @@ function Home() {
               </div>
             </div>
 
-            <div className="home-logo-area">
+            <div className="home-logo-area" data-logo-playing={logoPlaying}>
               <div className="home-ring ring-one"></div>
               <div className="home-ring ring-two"></div>
               <img src="/media/emsam-logo.jpg" alt="EMSAM official emblem" />
+              <button className="logo-motion-toggle" type="button" aria-pressed={logoPlaying}
+                onClick={() => setLogoPlaying(playing => !playing)}>
+                {logoPlaying ? "Pause animation" : "Play animation"}
+              </button>
             </div>
           </div>
         </section>
