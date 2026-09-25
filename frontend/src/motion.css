@@ -4,7 +4,6 @@
   .home-copy, .page-hero-copy { animation-duration: 750ms; animation-timing-function: cubic-bezier(.22,1,.36,1); }
   .home-logo-area, .page-hero-image-wrap { animation-duration: 900ms; animation-timing-function: cubic-bezier(.22,1,.36,1); }
   .home-logo-area img { animation-duration: 8s; }
-  .home-ring { animation-duration: 35s; }
 
   .programme-card, .news-card, .announcement-card, .about-value-card,
   .dreamway-stream-grid article, .dreamway-service-grid a, .pathfinder-focus-grid article {
