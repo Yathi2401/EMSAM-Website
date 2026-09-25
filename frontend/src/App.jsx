@@ -14,10 +14,14 @@ import Register from "./pages/Register";
 import Results from "./pages/Results";
 import StudentDashboard from "./pages/StudentDashboard";
 
+import ScrollReveal from "./components/ScrollReveal";
+import "./motion.css";
+
 function App() {
   return (
     <>
       <ScrollToTop />
+      <ScrollReveal />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
