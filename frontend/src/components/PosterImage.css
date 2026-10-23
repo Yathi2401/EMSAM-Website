@@ -12,21 +12,28 @@
 
 .poster-link-hint {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
+  bottom: 10px;
+  right: 10px;
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 24px;
+  height: 24px;
   border: 0;
   background: transparent;
   color: #fff;
-  font-size: 19px;
+  opacity: 0.65;
   pointer-events: none;
 }
-.poster-link-hint svg { width: 25px; height: 25px; filter: drop-shadow(0 1px 2px #071b33) drop-shadow(0 0 1px #071b33); }
-.poster-link:hover .poster-link-hint,
-.poster-link:focus-visible .poster-link-hint { color: #fff; transform: scale(1.08); }
+.poster-link-hint svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.8;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+.poster-link:focus-visible .poster-link-hint { opacity: 1; }
+@media (hover: hover) {
+  .poster-link:hover .poster-link-hint { opacity: 1; }
+}
 
 .pathfinder-main-poster .poster-link { height: 100%; }
 
@@ -84,7 +91,8 @@ body:has(.poster-dialog[open]) #root { filter: blur(6px); }
   .poster-dialog-close { top: 12px; right: 12px; }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .poster-link-hint, .poster-dialog-close { transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease; }
+  .poster-link-hint { transition: opacity 180ms ease; }
+  .poster-dialog-close { transition: color 160ms ease; }
   .poster-dialog[open] { animation: poster-appear 180ms ease-out; }
   @keyframes poster-appear { from { opacity: 0; } to { opacity: 1; } }
 }
