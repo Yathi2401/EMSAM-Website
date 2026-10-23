@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaBullhorn, FaEnvelope, FaFilePdf, FaSignOutAlt, FaUsers } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import SiteFooter from "../components/SiteFooter";
 import SiteNavbar from "../components/SiteNavbar";
-import { apiRequest, clearSession, getCurrentUser } from "../services/api";
+import { apiRequest, clearSession, getCurrentUser, serverFileUrl } from "../services/api";
 import "./Dashboard.css";
 
 const initialAnnouncement = {
@@ -28,6 +28,19 @@ function AdminDashboard() {
   const [papers, setPapers] = useState([]);
   const [deleting, setDeleting] = useState(false);
   const [announcement, setAnnouncement] = useState(initialAnnouncement);
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState(null);
+  const announcementTitleRef = useRef(null);
+  const announcementPhotoRef = useRef(null);
+  const [announcementPhoto, setAnnouncementPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState("");
+  const [photoError, setPhotoError] = useState("");
+
+  useEffect(() => {
+    if (!announcementPhoto) { setPhotoPreview(""); return; }
+    const url = URL.createObjectURL(announcementPhoto);
+    setPhotoPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [announcementPhoto]);
   const [paper, setPaper] = useState({ title: "", subject: "", stream: "Both", year: "2026", paperType: "Paper I", file: null });
   const [resultImport, setResultImport] = useState({ stream: "Physical Science", examYear: "2026", file: null });
   const [status, setStatus] = useState({ type: "", message: "" });
@@ -72,6 +85,7 @@ function AdminDashboard() {
     try {
       const data = await apiRequest(`/admin/${resource}/${item.id}`, { method: "DELETE" });
       setStatus({ type: "success", message: data.message });
+      if (resource === "announcements" && item.id === editingAnnouncementId) cancelAnnouncementEdit();
       await loadDashboard();
     } catch (error) {
       setStatus({ type: "error", message: error.message });
@@ -80,17 +94,60 @@ function AdminDashboard() {
     }
   }
 
+  function cancelAnnouncementEdit() {
+    setEditingAnnouncementId(null);
+    setAnnouncement(initialAnnouncement);
+    resetPhoto();
+  }
+
+  function resetPhoto() {
+    setAnnouncementPhoto(null);
+    setPhotoError("");
+    if (announcementPhotoRef.current) announcementPhotoRef.current.value = "";
+  }
+
+  function selectPhoto(event) {
+    const file = event.target.files[0];
+    setPhotoError("");
+    if (file && (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 4 * 1024 * 1024)) {
+      setAnnouncementPhoto(null);
+      event.target.value = "";
+      setPhotoError("Choose a JPG, PNG or WebP photo up to 4 MB.");
+      return;
+    }
+    setAnnouncementPhoto(file || null);
+  }
+
+  function editAnnouncement(item) {
+    if (editingAnnouncementId && !window.confirm("Discard the current edit and edit this announcement?")) return;
+    setEditingAnnouncementId(item.id);
+    resetPhoto();
+    setAnnouncement({
+      category: item.category,
+      title: item.title,
+      summary: item.summary,
+      eventDate: item.event_date ? item.event_date.slice(0, 10) : "",
+      imageUrl: item.image_url || "",
+    });
+    setStatus({ type: "", message: "" });
+    announcementTitleRef.current?.focus();
+    announcementTitleRef.current?.scrollIntoView({ block: "center" });
+  }
+
   async function submitAnnouncement(event) {
     event.preventDefault();
     setStatus({ type: "", message: "" });
     try {
-      const data = await apiRequest("/admin/announcements", {
-        method: "POST",
-        body: JSON.stringify(announcement),
+      const formData = new FormData();
+      for (const [key, value] of Object.entries(announcement)) formData.append(key, value);
+      if (announcementPhoto) formData.append("photo", announcementPhoto);
+      const data = await apiRequest(editingAnnouncementId ? `/admin/announcements/${editingAnnouncementId}` : "/admin/announcements", {
+        method: editingAnnouncementId ? "PUT" : "POST",
+        body: formData,
       });
       setStatus({ type: "success", message: data.message });
-      setAnnouncement(initialAnnouncement);
-      loadDashboard();
+      cancelAnnouncementEdit();
+      await loadDashboard();
     } catch (error) {
       setStatus({ type: "error", message: error.message });
     }
@@ -197,18 +254,27 @@ function AdminDashboard() {
 
             <div className="admin-forms-grid">
               <form className="admin-form" onSubmit={(event) => submitOnce(event, submitAnnouncement)}>
-                <h2>Publish Announcement</h2>
-                <label>Category</label>
-                <select value={announcement.category} onChange={(e) => setAnnouncement({ ...announcement, category: e.target.value })}><option>Dreamway</option><option>Pathfinder</option><option>Results</option><option>Resources</option><option>General</option></select>
-                <label>Title</label>
-                <input value={announcement.title} onChange={(e) => setAnnouncement({ ...announcement, title: e.target.value })} required />
-                <label>Summary</label>
-                <textarea rows="4" value={announcement.summary} onChange={(e) => setAnnouncement({ ...announcement, summary: e.target.value })} required />
-                <label>Event Date</label>
-                <input type="date" value={announcement.eventDate} onChange={(e) => setAnnouncement({ ...announcement, eventDate: e.target.value })} />
-                <label>Frontend Image Path</label>
-                <input placeholder="/media/image-name.jpg" value={announcement.imageUrl} onChange={(e) => setAnnouncement({ ...announcement, imageUrl: e.target.value })} />
-                <button type="submit" disabled={busy}>Publish</button>
+                <h2>{editingAnnouncementId ? "Edit Announcement" : "Publish Announcement"}</h2>
+                <label htmlFor="announcement-category">Category</label>
+                <select id="announcement-category" disabled={busy} value={announcement.category} onChange={(e) => setAnnouncement({ ...announcement, category: e.target.value })}>
+                  {Array.from(new Set(["Dreamway", "Pathfinder", "Results", "Resources", "General", announcement.category])).map(category => <option key={category}>{category}</option>)}
+                </select>
+                <label htmlFor="announcement-title">Title</label>
+                <input id="announcement-title" ref={announcementTitleRef} disabled={busy} maxLength={200} value={announcement.title} onChange={(e) => setAnnouncement({ ...announcement, title: e.target.value })} required />
+                <label htmlFor="announcement-summary">Summary</label>
+                <textarea id="announcement-summary" disabled={busy} maxLength={10000} rows="4" value={announcement.summary} onChange={(e) => setAnnouncement({ ...announcement, summary: e.target.value })} required />
+                <label htmlFor="announcement-date">Event Date</label>
+                <input id="announcement-date" disabled={busy} type="date" value={announcement.eventDate} onChange={(e) => setAnnouncement({ ...announcement, eventDate: e.target.value })} />
+                <label htmlFor="announcement-image">Photo (optional)</label>
+                <input id="announcement-image" ref={announcementPhotoRef} type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={selectPhoto} aria-describedby="announcement-photo-help" />
+                <p id="announcement-photo-help" className="photo-help">Choose a JPG, PNG or WebP photo up to 4 MB. When editing, leave this empty to keep the current photo.</p>
+                {photoError && <p role="alert" className="form-status error">{photoError}</p>}
+                {(photoPreview || announcement.imageUrl) && <div className="announcement-photo-preview">
+                  <img src={photoPreview || serverFileUrl(announcement.imageUrl)} alt="Announcement photo preview" />
+                  <button className="cancel-edit" type="button" disabled={busy} onClick={() => { resetPhoto(); setAnnouncement({ ...announcement, imageUrl: "" }); }}>Remove Photo</button>
+                </div>}
+                <button type="submit" disabled={busy || deleting || Boolean(photoError)}>{busy ? "Please wait..." : editingAnnouncementId ? "Save Changes" : "Publish"}</button>
+                {editingAnnouncementId && <button className="cancel-edit" type="button" disabled={busy || deleting} onClick={cancelAnnouncementEdit}>Cancel</button>}
               </form>
 
               <form className="admin-form" onSubmit={(event) => submitOnce(event, uploadPaper)}>
@@ -250,7 +316,10 @@ function AdminDashboard() {
                   {section.items.map((item) => (
                     <div className="admin-record" key={item.id}>
                       <span>{item.title}{!item.is_published && " (Unpublished)"}</span>
-                      <button type="button" disabled={deleting} onClick={() => deleteItem(section.resource, item)} aria-label={`Delete ${item.title}`}>Delete</button>
+                      <div className="admin-record-actions">
+                        {section.resource === "announcements" && <button className="edit-record" type="button" disabled={busy || deleting} onClick={() => editAnnouncement(item)} aria-label={`Edit ${item.title}`}>Edit</button>}
+                        <button type="button" disabled={busy || deleting} onClick={() => deleteItem(section.resource, item)} aria-label={`Delete ${item.title}`}>Delete</button>
+                      </div>
                     </div>
                   ))}
                   {section.items.length === 0 && <p>No records available.</p>}

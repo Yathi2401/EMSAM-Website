@@ -11,11 +11,13 @@ import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { examStreams, validText, validYear } from "../utils/validation.js";
 import { prepareResultRows, inTransaction } from "../utils/resultImport.js";
 import { paperBucket, storePaper } from "../utils/paperStorage.js";
+import { saveImage, removeImage } from "../utils/announcementImages.js";
 
 const router = express.Router();
 const papersFolder = fileURLToPath(new URL("../uploads/papers/", import.meta.url));
 const tempFolder = fileURLToPath(new URL("../uploads/temp/", import.meta.url));
 const cloud = Boolean(process.env.VERCEL);
+const uploadAnnouncement = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1 } });
 if (!cloud) {
   fs.mkdirSync(papersFolder, { recursive: true });
   fs.mkdirSync(tempFolder, { recursive: true });
@@ -54,7 +56,7 @@ router.use(requireAuth, requireAdmin);
 
 router.get("/announcements", async (_req, res, next) => {
   try {
-    const rows = await Announcement.find().select("title is_published").sort({ _id: -1 });
+    const rows = await Announcement.find().sort({ _id: -1 });
     res.json(rows);
   } catch (error) {
     next(error);
@@ -120,21 +122,60 @@ router.get("/users", async (_req, res) => {
   }
 });
 
-router.post("/announcements", async (req, res) => {
+function validAnnouncement({ category, title, summary, eventDate, imageUrl } = {}) {
+  const validDate = eventDate == null || eventDate === "" || (
+    typeof eventDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(eventDate) &&
+    Number.isFinite(Date.parse(eventDate)) && new Date(eventDate).toISOString().slice(0, 10) === eventDate
+  );
+  return validText(category, 80) && validText(title, 200) && validText(summary, 10000) &&
+    validText(imageUrl, 500, true) && validDate;
+}
+
+router.post("/announcements", uploadAnnouncement.single("photo"), async (req, res) => {
   const { category, title, summary, eventDate, imageUrl } = req.body || {};
 
-  if (!validText(category, 80) || !validText(title, 200) || !validText(summary, 10000) ||
-      !validText(imageUrl, 500, true) || (eventDate && (typeof eventDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate) || !Number.isFinite(Date.parse(eventDate))))) {
-    return res.status(400).json({ message: "Category, title and summary are required." });
+  if (!validAnnouncement(req.body || {})) {
+    return res.status(400).json({ message: "Provide category (up to 80 characters), title (200), summary (10,000), and a valid optional date and image path (500)." });
   }
 
+  let uploadedUrl;
   try {
-    const result = await Announcement.create({ category, title, summary, event_date: eventDate || null, image_url: imageUrl || null });
+    if (req.file) uploadedUrl = await saveImage(req.file);
+    const result = await Announcement.create({ category, title, summary, event_date: eventDate || null, image_url: uploadedUrl || imageUrl || null });
 
     res.status(201).json({ message: "Announcement published.", id: result.id });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Unable to publish announcement." });
+    if (uploadedUrl) await removeImage(uploadedUrl);
+    res.status(error.status === 400 ? 400 : 500).json({ message: error.status === 400 ? error.message : "Unable to publish announcement." });
+  }
+});
+
+router.put("/announcements/:id", uploadAnnouncement.single("photo"), async (req, res) => {
+  if (!mongoose.isObjectIdOrHexString(req.params.id)) return res.status(400).json({ message: "Invalid announcement ID." });
+  if (!validAnnouncement(req.body || {})) {
+    return res.status(400).json({ message: "Provide category (up to 80 characters), title (200), summary (10,000), and a valid optional date and image path (500)." });
+  }
+  const { category, title, summary, eventDate, imageUrl } = req.body;
+  let uploadedUrl;
+  try {
+    const previous = await Announcement.findById(req.params.id);
+    if (!previous) return res.status(404).json({ message: "Announcement not found." });
+    if (req.file) uploadedUrl = await saveImage(req.file);
+    const nextImage = uploadedUrl || (imageUrl === undefined ? previous.image_url : imageUrl || null);
+    const result = await Announcement.findByIdAndUpdate(req.params.id, {
+      $set: { category, title, summary, event_date: eventDate || null, image_url: nextImage },
+    }, { returnDocument: "after", runValidators: true });
+    if (!result) {
+      if (uploadedUrl) await removeImage(uploadedUrl);
+      return res.status(404).json({ message: "Announcement not found." });
+    }
+    if (previous.image_url !== nextImage) await removeImage(previous.image_url);
+    res.json({ message: "Announcement updated.", id: result.id });
+  } catch (error) {
+    console.error(error);
+    if (uploadedUrl) await removeImage(uploadedUrl);
+    res.status(error.status === 400 ? 400 : 500).json({ message: error.status === 400 ? error.message : "Unable to update announcement." });
   }
 });
 
@@ -143,6 +184,7 @@ router.delete("/announcements/:id", async (req, res) => {
   try {
     const result = await Announcement.findByIdAndDelete(req.params.id);
     if (!result) return res.status(404).json({ message: "Announcement not found." });
+    await removeImage(result.image_url);
     res.json({ message: "Announcement deleted." });
   } catch (error) {
     console.error(error);

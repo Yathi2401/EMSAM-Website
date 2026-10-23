@@ -6,7 +6,7 @@ import { MongoMemoryReplSet } from "mongodb-memory-server";
 import XLSX from "xlsx";
 import mongoose from "../config/db.js";
 import app from "../app.js";
-import { User, PastPaper, ExamResult, ContactMessage } from "../models/index.js";
+import { User, Announcement, PastPaper, ExamResult, ContactMessage } from "../models/index.js";
 import { seedDatabase } from "../scripts/setupDatabase.js";
 
 test("MongoDB API, seeding and transactional imports", { timeout: 1200000 }, async (t) => {
@@ -72,6 +72,82 @@ test("MongoDB API, seeding and transactional imports", { timeout: 1200000 }, asy
     assert.equal((await request("/admin/summary", { token })).data.results, 287);
     const users = await request("/admin/users", { token });
     assert.ok(users.data.every(user => !user.password_hash));
+  });
+  await t.test("announcement editing persists and validates changes with admin permissions", async () => {
+    const body = { category: "General", title: "Original", summary: "Original summary" };
+    const added = await request("/admin/announcements", { method: "POST", token, body });
+    assert.equal(added.status, 201);
+    const route = `/admin/announcements/${added.data.id}`;
+    const edited = { category: "Dreamway", title: "Updated", summary: "Updated summary", eventDate: "2026-10-31", imageUrl: "/media/updated.jpg" };
+    assert.equal((await request(route, { method: "PUT", body: edited })).status, 401);
+    await request("/auth/register", { method: "POST", body: { fullName: "Edit Student", email: "edit@example.test", password: "StudentTest123" } });
+    const student = await request("/auth/login", { method: "POST", body: { email: "edit@example.test", password: "StudentTest123" } });
+    assert.equal((await request(route, { method: "PUT", token: student.data.token, body: edited })).status, 403);
+    for (const invalid of [{ title: " " }, { title: "x".repeat(201) }, { summary: "" }, { eventDate: "2026-02-30" }, { eventDate: 123 }, { imageUrl: {} }]) {
+      assert.equal((await request(route, { method: "PUT", token, body: { ...edited, ...invalid } })).status, 400);
+    }
+    assert.equal((await Announcement.findById(added.data.id)).title, body.title);
+    assert.equal((await request(route, { method: "PUT", token, body: edited })).status, 200);
+    const stored = await Announcement.findById(added.data.id);
+    assert.equal(stored.title, edited.title);
+    assert.equal(stored.summary, edited.summary);
+    assert.equal(stored.category, edited.category);
+    assert.equal(stored.event_date.toISOString().slice(0, 10), edited.eventDate);
+    assert.equal(stored.image_url, edited.imageUrl);
+    for (const path of ["/announcements", "/admin/announcements"]) {
+      const refreshed = (await request(path, { token })).data.find(item => item.id === added.data.id);
+      assert.equal(refreshed.title, edited.title);
+      assert.equal(refreshed.summary, edited.summary);
+    }
+    assert.equal((await request(route, { method: "PUT", token, body: { ...edited, eventDate: "", imageUrl: "" } })).status, 200);
+    const cleared = await Announcement.findById(added.data.id);
+    assert.equal(cleared.event_date, null);
+    assert.equal(cleared.image_url, null);
+    assert.equal((await request("/admin/announcements/invalid", { method: "PUT", token, body: edited })).status, 400);
+    assert.equal((await request(route, { method: "DELETE", token })).status, 200);
+    assert.equal(await Announcement.findById(added.data.id), null);
+    assert.equal((await request(route, { method: "PUT", token, body: edited })).status, 404);
+    assert.ok(!(await request("/announcements")).data.some(item => item.id === added.data.id));
+  });
+  await t.test("announcement photos upload, download, persist, replace and clean up", async () => {
+    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII=", "base64");
+    function photoForm(bytes = png) {
+      const form = new FormData();
+      form.append("category", "General");
+      form.append("title", "Photo test");
+      form.append("summary", "Photo announcement");
+      form.append("photo", new Blob([bytes], { type: "image/png" }), "photo.png");
+      return form;
+    }
+    assert.equal((await request("/admin/announcements", { method: "POST", body: photoForm() })).status, 401);
+    assert.equal((await request("/admin/announcements", { method: "POST", token, body: photoForm(Buffer.from("not an image")) })).status, 400);
+    assert.equal((await request("/admin/announcements", { method: "POST", token, body: photoForm(Buffer.alloc(4 * 1024 * 1024 + 1)) })).status, 400);
+    const added = await request("/admin/announcements", { method: "POST", token, body: photoForm() });
+    assert.equal(added.status, 201);
+    const route = `/admin/announcements/${added.data.id}`;
+    const first = await Announcement.findById(added.data.id);
+    const download = await fetch(new URL(first.image_url, base));
+    assert.equal(download.status, 200);
+    assert.equal(download.headers.get("content-type"), "image/png");
+    assert.deepEqual(Buffer.from(await download.arrayBuffer()), png);
+    const details = { category: "General", title: "Changed title", summary: "Updated summary" };
+    assert.equal((await request(route, { method: "PUT", token, body: details })).status, 200);
+    assert.equal((await Announcement.findById(first.id)).image_url, first.image_url);
+    assert.equal((await request(route, { method: "PUT", token, body: photoForm(Buffer.from("invalid")) })).status, 400);
+    assert.equal((await Announcement.findById(first.id)).image_url, first.image_url);
+    assert.equal((await request(route, { method: "PUT", token, body: photoForm() })).status, 200);
+    const replaced = await Announcement.findById(first.id);
+    assert.notEqual(replaced.image_url, first.image_url);
+    assert.equal((await fetch(new URL(first.image_url, base))).status, 404);
+    assert.equal((await request(route, { method: "PUT", token, body: { ...details, imageUrl: "" } })).status, 200);
+    assert.equal((await fetch(new URL(replaced.image_url, base))).status, 404);
+    assert.equal((await Announcement.findById(first.id)).image_url, null);
+    assert.equal((await request(route, { method: "PUT", token, body: photoForm() })).status, 200);
+    const last = await Announcement.findById(first.id);
+    assert.equal((await request(route, { method: "DELETE", token })).status, 200);
+    assert.equal((await fetch(new URL(last.image_url, base))).status, 404);
+    assert.equal(await mongoose.connection.collection("announcement_images.files").countDocuments(), 0);
+    assert.equal(await mongoose.connection.collection("announcement_images.chunks").countDocuments(), 0);
   });
   await t.test("admin announcement and PDF create/delete uses ObjectIds", async () => {
     const added = await request("/admin/announcements", { method: "POST", token, body: { category: "General", title: "Integration test", summary: "Test announcement" } });

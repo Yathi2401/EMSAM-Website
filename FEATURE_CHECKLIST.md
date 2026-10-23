@@ -27,6 +27,8 @@
 - [x] Individual result search
 - [x] Contact form storage
 - [x] Announcement management
+- [x] Announcement editing with prefilled fields, Save/Cancel and validated admin-only updates
+- [x] Announcement photo picker, preview and persistent MongoDB image storage
 - [x] PDF upload
 - [x] Excel result import
 - [x] Admin dashboard statistics

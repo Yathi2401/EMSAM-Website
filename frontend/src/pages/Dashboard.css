@@ -42,6 +42,13 @@
 .admin-record p { margin: 6px 0 0; color: #647587; }
 .admin-record button { padding: 9px 14px; border: 1px solid #b42318; border-radius: 7px; color: #b42318; background: #fff; cursor: pointer; }
 .admin-record button:disabled { opacity: 0.5; cursor: wait; }
+.admin-record-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-record .edit-record { border-color: #1769c2; color: #1769c2; }
+.admin-form .cancel-edit { background: #edf2f7; margin-top: 8px; }
+.photo-help { color: #647587; font-size: 12px; line-height: 1.6; }
+.announcement-photo-preview { margin-top: 12px; }
+.announcement-photo-preview img { display: block; width: 100%; max-height: 240px; object-fit: contain; border-radius: 8px; background: #f4f7fb; }
+.admin-form input:focus-visible, .admin-form select:focus-visible, .admin-form textarea:focus-visible { outline: 2px solid #1769c2; outline-offset: 2px; }
 .message-list article { padding: 17px; border: 1px solid #e0e7ee; border-radius: 10px; background: #f8fafc; }
 .message-list article > div { display: flex; justify-content: space-between; gap: 15px; }
 .message-list strong { color: #071b33; font-size: 12px; }

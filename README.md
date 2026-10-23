@@ -326,6 +326,14 @@ MONGODB_URI=mongodb://127.0.0.1:27017/emsam_db?replicaSet=rs0
 
 If another MongoDB service already occupies port 27017, configure that service as a replica set or use a different port consistently. Wait for a primary to be elected before running database setup.
 
+## Announcement CRUD demonstration
+
+Log in as an administrator and open the Admin Dashboard. Publish a test announcement, then find it under **Manage Announcements**. Select **Edit** to prefill the announcement form, change its details and select **Save Changes**. **Cancel** discards the edit. Refresh the dashboard and public Announcements page to see the saved changes. Finally, select **Delete** and confirm removal of the test record.
+
+Announcement creation, reading, updating and deletion use MongoDB. Editing is restricted to administrators and validates required fields, text lengths and the optional event date on the server.
+
+Use **Photo (optional)** to choose a JPG, PNG or WebP file up to 4 MB and preview it before saving. Leave it empty during editing to keep the current photo, select another file to replace it, or choose **Remove Photo** and save. Uploaded photos are stored persistently in MongoDB GridFS for local and hosted deployments. Replaced or deleted announcement photos are cleaned up automatically; bundled `/media/` images remain available.
+
 ## 🧩 How the Backend Works
 
 | File | Purpose |

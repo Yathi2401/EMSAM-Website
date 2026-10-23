@@ -4,8 +4,23 @@ import { Announcement, PastPaper, ExamResult, ContactMessage } from "../models/i
 import { examStreams, validText, validEmail, validYear } from "../utils/validation.js";
 import mongoose from "mongoose";
 import { paperBucket } from "../utils/paperStorage.js";
+import { imageBucket } from "../utils/announcementImages.js";
 
 const router = express.Router();
+
+router.get("/announcement-images/:id", async (req, res, next) => {
+  if (!mongoose.isObjectIdOrHexString(req.params.id)) return res.status(400).json({ message: "Invalid photo ID." });
+  try {
+    const id = new mongoose.Types.ObjectId(req.params.id);
+    const bucket = imageBucket();
+    const [file] = await bucket.find({ _id: id }).toArray();
+    if (!file) return res.status(404).json({ message: "Photo not found." });
+    res.setHeader("Content-Type", file.metadata.contentType);
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Content-Length", file.length);
+    bucket.openDownloadStream(id).on("error", next).pipe(res);
+  } catch (error) { next(error); }
+});
 
 router.get("/paper-files/:id", async (req, res, next) => {
   if (!mongoose.isObjectIdOrHexString(req.params.id)) return res.status(400).json({ message: "Invalid file ID." });
