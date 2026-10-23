@@ -2,6 +2,11 @@
   position: relative;
   display: block;
   min-width: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: inherit;
   cursor: zoom-in;
 }
 
@@ -9,7 +14,10 @@
   position: absolute;
   bottom: 12px;
   right: 12px;
-  padding: 6px 10px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
   border-radius: 5px;
   background: #071b33;
   color: #fff;
@@ -20,3 +28,56 @@
 }
 
 .pathfinder-main-poster .poster-link { height: 100%; }
+
+.poster-link:focus-visible { outline: 3px solid #d8a63a; outline-offset: 4px; }
+
+.poster-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 70px 24px 24px;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+}
+.poster-dialog[open] { display: grid; place-items: center; }
+.poster-dialog::backdrop {
+  background: rgba(2, 11, 23, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.poster-dialog-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.35);
+}
+.poster-dialog-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  background: #071b33;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+.poster-dialog-close:hover { background: #1769c2; }
+.poster-dialog-close:focus-visible { outline: 3px solid #d8a63a; outline-offset: 3px; }
+@media (max-width: 600px) {
+  .poster-dialog { padding: 70px 12px 16px; }
+}

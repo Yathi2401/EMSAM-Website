@@ -1,11 +1,39 @@
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { FaExpand, FaTimes } from "react-icons/fa";
 import "./PosterImage.css";
 
 export default function PosterImage({ src, alt, className }) {
+  const [open, setOpen] = useState(false);
+  const dialogRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const dialog = dialogRef.current;
+    const previousOverflow = document.body.style.overflow;
+    dialog.showModal();
+    document.body.style.overflow = "hidden";
+    return () => {
+      dialog.close();
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   return (
-    <a className="poster-link" href={src} target="_blank" rel="noopener noreferrer"
-      aria-label={`View full image: ${alt} (opens in a new tab)`}>
-      <img src={src} alt={alt} className={className} />
-      <span className="poster-link-hint" aria-hidden="true">View full image ↗</span>
-    </a>
+    <>
+      <button className="poster-link" type="button" onClick={() => setOpen(true)}
+        aria-label={`Enlarge image: ${alt}`} aria-haspopup="dialog">
+        <img src={src} alt={alt} className={className} />
+        <span className="poster-link-hint" aria-hidden="true"><FaExpand /></span>
+      </button>
+      {open && createPortal(
+        <dialog ref={dialogRef} className="poster-dialog" aria-label={alt || "Image preview"}
+          onClose={() => setOpen(false)}
+          onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
+          <button className="poster-dialog-close" type="button" aria-label="Close image" autoFocus onClick={() => setOpen(false)}><FaTimes /></button>
+          <img className="poster-dialog-image" src={src} alt={alt} />
+        </dialog>, document.body
+      )}
+    </>
   );
 }
