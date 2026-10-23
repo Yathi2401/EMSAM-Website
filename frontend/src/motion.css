@@ -2,7 +2,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .site-navbar { animation: navigation-arrive 550ms cubic-bezier(.22,1,.36,1) both; }
   .home-copy, .page-hero-copy { animation-duration: 750ms; animation-timing-function: cubic-bezier(.22,1,.36,1); }
-  .home-logo-area, .page-hero-image-wrap { animation-duration: 900ms; animation-timing-function: cubic-bezier(.22,1,.36,1); }
+  .home-logo-area { animation-duration: 900ms; animation-timing-function: cubic-bezier(.22,1,.36,1); }
   .home-logo-area img { animation-duration: 8s; }
 
   .programme-card, .news-card, .announcement-card, .about-value-card,
@@ -27,7 +27,6 @@
   }
   .primary-button:hover svg, .dark-link:hover svg, .programme-card-content a:hover svg { transform: translateX(3px); }
   form button:not(:disabled):hover { transform: translateY(-2px); }
-  .page-hero-image:hover { transform: translateY(-3px); }
 }
 
 .primary-button:active, .secondary-button:active, form button:not(:disabled):active { transform: translateY(0); }
