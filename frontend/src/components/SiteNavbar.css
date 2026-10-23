@@ -6,7 +6,7 @@
 }
 
 .site-navbar {
-  width: 980px;
+  width: 1040px;
   max-width: calc(100% - 20px);
   height: 64px;
   margin: 0 auto;
@@ -28,7 +28,7 @@
   flex-shrink: 0;
   color: #d8a63a;
   text-decoration: none;
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 900;
   letter-spacing: 1.6px;
 }
@@ -58,7 +58,7 @@
   background: transparent;
   text-decoration: none;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
@@ -104,9 +104,10 @@
 
 .more-dropdown {
   position: absolute;
-  top: 43px;
+  /* Touch the trigger's edge so the pointer never crosses an inactive gap. */
+  top: calc(100% - 1px);
   right: 0;
-  min-width: 150px;
+  min-width: 170px;
   padding: 8px;
   display: none;
   border: 1px solid rgba(255,255,255,0.13);
@@ -115,7 +116,8 @@
   box-shadow: 0 14px 30px rgba(0,0,0,0.28);
 }
 
-.more-menu:hover .more-dropdown {
+.more-menu:hover .more-dropdown,
+.more-menu:focus-within .more-dropdown {
   display: grid;
 }
 
@@ -124,7 +126,7 @@
   border-radius: 7px;
   color: #dce6ef;
   text-decoration: none;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -141,7 +143,7 @@
   color: #071b33;
   background: linear-gradient(135deg, #edc56b, #d8a63a);
   text-decoration: none;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 900;
   box-shadow: 0 7px 18px rgba(216,166,58,0.24);
   transition: transform 0.25s ease;
@@ -161,7 +163,7 @@
   cursor: pointer;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 960px) {
   .site-navbar { width: 100%; max-width: 100%; }
   .menu-button { display: block; }
   .site-nav-links {
