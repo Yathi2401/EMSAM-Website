@@ -18,6 +18,7 @@ function Dreamway() {
           image="/media/5-years-celebration.jpg"
         >
           <div className="dreamway-hero-actions">
+            <Link to="/admissions" className="primary-button"><FaClipboardCheck /> Apply for Admission</Link>
             <Link to="/past-papers" className="primary-button"><FaDownload /> Past Papers</Link>
             <Link to="/results" className="secondary-button">Check Results</Link>
           </div>

@@ -7,6 +7,7 @@ import "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import publicRoutes from "./routes/public.js";
 import adminRoutes from "./routes/admin.js";
+import admissionRoutes from "./routes/admissions.js";
 import multer from "multer";
 
 const app = express();
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/uploads/papers", express.static(path.join(__dirname, "uploads/papers")));
 
 app.use("/api/auth", authRoutes);
+app.use("/api", admissionRoutes);
 app.use("/api", publicRoutes);
 app.use("/api/admin", adminRoutes);
 

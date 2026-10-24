@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { FaBullhorn, FaEnvelope, FaFilePdf, FaSignOutAlt, FaUsers } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import SiteFooter from "../components/SiteFooter";
 import SiteNavbar from "../components/SiteNavbar";
 import { apiRequest, clearSession, getCurrentUser, serverFileUrl } from "../services/api";
@@ -251,6 +251,8 @@ function AdminDashboard() {
               <div><FaBullhorn /><span>Results</span><strong>{summary?.results ?? "—"}</strong></div>
               <div><FaEnvelope /><span>New Messages</span><strong>{summary?.newMessages ?? "—"}</strong></div>
             </div>
+
+            <section className="messages-card"><h2>Examination Admissions</h2><p>Open or close applications, edit intake details, review receipts and download the admission register as Excel.</p><Link to="/admin/admissions" className="primary-button">Manage Admissions</Link></section>
 
             <div className="admin-forms-grid">
               <form className="admin-form" onSubmit={(event) => submitOnce(event, submitAnnouncement)}>

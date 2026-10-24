@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { examStreams } from "../utils/validation.js";
+import { Admission, AdmissionSettings } from "./admissions.js";
 
 function schema(fields) {
   return new mongoose.Schema(fields, {
@@ -67,7 +68,7 @@ export const ContactMessage = mongoose.model("ContactMessage", schema({
 export async function initializeModels() {
   await mongoose.connection.collection("request_limits").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
   // Create collections and indexes only after connectDatabase() has completed.
-  await Promise.all([User, Announcement, PastPaper, ExamResult, ContactMessage].map(async model => {
+  await Promise.all([User, Announcement, PastPaper, ExamResult, ContactMessage, Admission, AdmissionSettings].map(async model => {
     await model.createCollection();
     await model.createIndexes();
   }));

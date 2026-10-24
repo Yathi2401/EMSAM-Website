@@ -1,0 +1,103 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+import { MongoMemoryServer } from "mongodb-memory-server";
+import jwt from "jsonwebtoken";
+import XLSX from "xlsx";
+import mongoose from "../config/db.js";
+import app from "../app.js";
+import { User, initializeModels } from "../models/index.js";
+import { Admission } from "../models/admissions.js";
+
+test("admissions: settings, public submissions, private receipts and Excel register", { timeout: 180000 }, async t => {
+  process.env.JWT_SECRET = "admission-integration-test-secret";
+  const mongo = await MongoMemoryServer.create({ binary: { version: "7.0.14" } });
+  t.after(async () => { await mongoose.disconnect(); await mongo.stop(); });
+  await mongoose.connect(mongo.getUri("admissions_test"));
+  await initializeModels();
+  const admin = await User.create({ full_name: "Admin", email: "admin@example.test", role: "admin", password_hash: "unused-test-hash" });
+  const student = await User.create({ full_name: "Student", email: "student@example.test", role: "student", password_hash: "unused-test-hash" });
+  const token = jwt.sign({ id: admin.id }, process.env.JWT_SECRET);
+  const studentToken = jwt.sign({ id: student.id }, process.env.JWT_SECRET);
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise(resolve => server.once("listening", resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}/api`;
+  async function request(path, { method = "GET", body, auth } = {}) {
+    const headers = {};
+    if (auth) headers.Authorization = `Bearer ${auth}`;
+    if (body && !(body instanceof FormData)) headers["Content-Type"] = "application/json";
+    const response = await fetch(base + path, { method, headers, body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined });
+    return { status: response.status, data: await response.json() };
+  }
+  let settings = (await request("/admissions/settings")).data;
+  assert.equal(settings.accepting, false);
+  assert.equal(settings.centres.length, 9);
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII=", "base64");
+  function form(overrides = {}, file) {
+    const value = new FormData();
+    const fields = { submissionKey: randomUUID(), settingsVersion: settings.updatedAt || "", year: settings.year, fullName: "TEST APPLICANT", district: "Mullaitivu", phone: "0771234567", school: "Mu/Vidyananda College", stream: "Biological Science", alYear: "2027", centre: settings.centres[0], paymentMethod: "coordinator", coordinatorName: "Test coordinator", consent: "true", ...overrides };
+    for (const [key, item] of Object.entries(fields)) value.append(key, item);
+    if (file) value.append("receipt", new Blob([file], { type: "image/png" }), "receipt.png");
+    return value;
+  }
+  assert.equal((await request("/admissions", { method: "POST", body: form() })).status, 409);
+  for (const path of ["/admin/admissions", "/admin/admissions/settings", "/admin/admissions/export"]) {
+    assert.equal((await request(path)).status, 401);
+    assert.equal((await request(path, { auth: studentToken })).status, 403);
+  }
+  assert.equal((await request("/admin/admissions/settings", { method: "PUT", body: { ...settings, isOpen: true }, auth: token })).status, 400);
+  settings = { ...settings, isOpen: true, bankDetails: "Test bank details", coordinators: "Test coordinator", deadline: null, fee: 250, schedule: "Dates to be announced" };
+  const savedSettings = await request("/admin/admissions/settings", { method: "PUT", body: settings, auth: token });
+  assert.equal(savedSettings.status, 200); settings = savedSettings.data;
+  assert.equal((await request("/admissions/settings")).data.accepting, true);
+  const coordinator = await request("/admissions", { method: "POST", body: form({ paymentStatus: "verified", fee: 1, examIndex: "FAKE" }) });
+  assert.equal(coordinator.status, 201);
+  assert.match(coordinator.data.reference, /^DW-2027-[A-F0-9]{12}$/);
+  assert.equal(coordinator.data.phone, undefined);
+  const first = await Admission.findOne({ reference: coordinator.data.reference });
+  assert.equal(first.paymentStatus, "pending"); assert.equal(first.fee, 250); assert.equal(first.examIndex, undefined);
+  const bankKey = randomUUID();
+  const bank = { paymentMethod: "bank", paymentReference: "TEST APPLICANT", submissionKey: bankKey, email: "test@example.test" };
+  assert.equal((await request("/admissions", { method: "POST", body: form(bank) })).status, 400);
+  assert.equal((await request("/admissions", { method: "POST", body: form(bank, Buffer.from("not an image")) })).status, 400);
+  assert.equal((await request("/admissions", { method: "POST", body: form(bank, Buffer.alloc(3 * 1024 * 1024 + 1)) })).status, 400);
+  const bankResponse = await request("/admissions", { method: "POST", body: form(bank, png) });
+  assert.equal(bankResponse.status, 201);
+  const retry = await request("/admissions", { method: "POST", body: form(bank, png) });
+  assert.equal(retry.status, 200); assert.equal(retry.data.reference, bankResponse.data.reference);
+  assert.equal(await Admission.countDocuments(), 2);
+  const second = await Admission.findOne({ reference: bankResponse.data.reference });
+  assert.equal(await mongoose.connection.collection("admission_receipts.files").countDocuments(), 1);
+  const receiptPath = `/admin/admissions/${second.id}/receipt`;
+  assert.equal((await request(receiptPath)).status, 401);
+  assert.equal((await request(receiptPath, { auth: studentToken })).status, 403);
+  const download = await fetch(base + receiptPath, { headers: { Authorization: `Bearer ${token}` } });
+  assert.equal(download.status, 200); assert.equal(download.headers.get("cache-control"), "no-store");
+  assert.deepEqual(Buffer.from(await download.arrayBuffer()), png);
+  assert.equal((await request("/admissions", { method: "POST", body: form({ centre: "Invalid centre" }) })).status, 400);
+  assert.equal((await request("/admissions", { method: "POST", body: form({ consent: "false" }) })).status, 400);
+  assert.equal((await request("/admissions", { method: "POST", body: form({ phone: "bad" }) })).status, 400);
+  assert.equal((await request("/admissions", { method: "POST", body: form({ year: "2026" }) })).status, 409);
+  assert.equal((await request("/admissions", { method: "POST", body: form({ settingsVersion: "outdated" }) })).status, 409);
+  const review = { paymentStatus: "verified", adminNotes: "Payment received", examIndex: "0012" };
+  assert.equal((await request(`/admin/admissions/${first.id}`, { method: "PATCH", body: review, auth: token })).status, 200);
+  assert.equal((await request(`/admin/admissions/${second.id}`, { method: "PATCH", body: review, auth: token })).status, 409);
+  assert.equal((await request(`/admin/admissions/${first.id}`, { method: "PATCH", body: { ...review, paymentStatus: "invalid" }, auth: token })).status, 400);
+  const filtered = await request("/admin/admissions?status=verified&year=2027", { auth: token });
+  assert.equal(filtered.data.total, 1); assert.equal(filtered.data.items[0].submissionKey, undefined);
+  const excelResponse = await fetch(base + "/admin/admissions/export?status=verified", { headers: { Authorization: `Bearer ${token}` } });
+  assert.equal(excelResponse.status, 200);
+  const workbook = XLSX.read(Buffer.from(await excelResponse.arrayBuffer()), { type: "buffer" });
+  const rows = XLSX.utils.sheet_to_json(workbook.Sheets.Admissions);
+  assert.equal(rows.length, 1); assert.equal(rows[0]["Phone"], "0771234567"); assert.equal(rows[0]["Examination index"], "0012");
+  assert.equal(rows[0]["Payment status"], "verified"); assert.equal(rows[0]["District"], "Mullaitivu");
+  await request("/admin/admissions/settings", { method: "PUT", body: { ...settings, isOpen: false }, auth: token });
+  assert.equal((await request("/admissions", { method: "POST", body: form() })).status, 409);
+  assert.equal((await request("/admin/admissions", { auth: token })).data.total, 2);
+  // Expiry is enforced on the server, regardless of a page that was already open.
+  const { AdmissionSettings } = await import("../models/admissions.js");
+  await AdmissionSettings.updateOne({ _id: "current" }, { isOpen: true, deadline: new Date(Date.now() - 1000) });
+  assert.equal((await request("/admissions/settings")).data.accepting, false);
+  assert.equal((await request("/admissions", { method: "POST", body: form() })).status, 409);
+});

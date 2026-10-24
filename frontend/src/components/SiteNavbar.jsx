@@ -33,6 +33,7 @@ function SiteNavbar() {
           <NavLink to="/" onClick={closeMenu}>Home</NavLink>
           <NavLink to="/about" onClick={closeMenu}>About</NavLink>
           <NavLink to="/dreamway" onClick={closeMenu}>Dreamway</NavLink>
+          <NavLink to="/admissions" onClick={closeMenu}>Admissions</NavLink>
           <NavLink to="/pathfinder" onClick={closeMenu}>Pathfinder</NavLink>
           <NavLink to="/past-papers" onClick={closeMenu}>Papers</NavLink>
           <NavLink to="/results" onClick={closeMenu}>Results</NavLink>

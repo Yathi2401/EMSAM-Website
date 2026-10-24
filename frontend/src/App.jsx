@@ -2,6 +2,8 @@ import { Route, Routes } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
 import About from "./pages/About";
 import AdminDashboard from "./pages/AdminDashboard";
+import Admissions from "./pages/Admissions";
+import AdminAdmissions from "./pages/AdminAdmissions";
 import Announcements from "./pages/Announcements";
 import Contact from "./pages/Contact";
 import Dreamway from "./pages/Dreamway";
@@ -35,6 +37,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<StudentDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admissions" element={<Admissions />} />
+        <Route path="/admin/admissions" element={<AdminAdmissions />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

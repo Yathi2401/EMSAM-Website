@@ -42,6 +42,21 @@ export function serverFileUrl(fileUrl) {
   return `${SERVER_URL}${encodeURI(fileUrl)}`;
 }
 
+export async function downloadAdminFile(path, fallbackName) {
+  const response = await fetch(`${API_URL}${path}`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("emsamToken") || ""}` },
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || "Unable to download this file.");
+  }
+  const filename = response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] || fallbackName;
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a"); link.href = url; link.download = filename;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
 export function saveSession(token, user) {
   localStorage.setItem("emsamToken", token);
   localStorage.setItem("emsamUser", JSON.stringify(user));

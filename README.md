@@ -430,3 +430,21 @@ Students can select **Edit Profile** on their dashboard and save or cancel chang
 Signup and profile editing share a dropdown of 14 Mullaitivu district schools classified as 1AB, with **Other** revealing a required manual school-name field. Sources: [Ministry of Education 2024 provincial school census](https://dmb.moe.gov.lk/2024/01/01_PDF/Tbl20240105.pdf) and [Northern Provincial Education directory](https://www.edudept.np.gov.lk/nearestsch.php) for national schools. Classification indicates A/L science provision; current availability of both streams is not independently confirmed. Maintain the list in `frontend/src/data/schools.js`.
 
 The backend creates the unique sparse `users.index_number` index during normal startup (including hosted API initialization). Existing accounts without an index number continue to work. Profile updates use authenticated `PUT /api/auth/me`; role, password and account status cannot be changed through this endpoint.
+
+## Online examination admissions
+
+Students apply at `/admissions`, accessible from the navigation and Dreamway page. The form follows the paper's full name, stream, school, district, centre and contact fields, with A/L year, optional WhatsApp/email, payment details and a declaration. Students review their details before submitting and can print/save a submission confirmation. An account is not required.
+
+Administrators use **Dashboard > Manage Admissions** (`/admin/admissions`):
+
+- **Intake settings:** edit the title, year, fee, introduction, centres, instructions, timetable, bank details, coordinator details and optional closing date/time. Save with **Accept applications** checked to open or unchecked to close. The server enforces the deadline even for previously opened browser pages.
+- **Applications:** search by name, reference, school or phone; filter by intake year and payment status; inspect the submitted details and private receipts; mark payments pending, verified or rejected; add internal notes and assign a unique examination index per intake year.
+- **Export Excel:** download an `.xlsx` register matching the current filters, including application details, payment status, examination index, notes and timestamps. Phone numbers and index numbers retain leading zeroes. Submissions are stored immediately in MongoDB; this is an Excel export, not a connected live Excel workbook.
+
+Bank transfers require the applicant's name as the payment reference and a PDF/JPG/PNG/WebP receipt up to **3 MB**. Coordinator payments require a coordinator name. Both remain pending until reviewed; the website does not charge cards or automatically verify transfers. Receipt files are stored in private MongoDB GridFS and can only be downloaded by authenticated administrators.
+
+Admissions default to **closed**, with a draft 2027 intake, the previous form's LKR 250 fee and nine centres. Review these defaults and enter real bank/coordinator details before opening. The old timetable is not reused. Editing intake settings preserves existing applications and their original title, year and fee. Changed settings invalidate stale forms to prevent submissions against outdated payment instructions. Repeat requests with the same submission key do not create duplicate entries.
+
+The printable confirmation is not an examination admission ticket. Examination indices are assigned by admins and included in the Excel register; distributing final tickets or notifications remains an EMSAM administration step. No automatic email/SMS is sent.
+
+Run `npm run test:integration --prefix backend` to check permissions, both payment methods, private receipt downloads, file validation, closed/expired admissions, duplicate retries, examination index uniqueness and Excel export using isolated temporary MongoDB databases.
