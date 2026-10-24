@@ -8,9 +8,11 @@ import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rateLimit.js";
 import { validText, validEmail, validYear, examStreams } from "../utils/validation.js";
 import { imageType } from "../utils/announcementImages.js";
+import { validateFormDesign, validateCustomAnswers, validNic } from "../utils/admissionForm.js";
+import { isCoreField, shownAdmissionFields } from "../../shared/admissionForm.js";
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 * 1024 * 1024, files: 1, fields: 25, fieldSize: 6000 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 * 1024 * 1024, files: 1, fields: 25, fieldSize: 160000 } });
 const bucket = () => new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: "admission_receipts" });
 const phoneValid = value => typeof value === "string" && /^[+\d][\d ()-]{6,29}$/.test(value.trim());
 const receiptType = buffer => imageType(buffer) || (buffer.subarray(0, 5).toString() === "%PDF-" ? "application/pdf" : null);
@@ -33,6 +35,16 @@ router.post("/admissions", rateLimit("admission", 15), upload.single("receipt"),
     if (Number(body.year) !== settings.year) return res.status(409).json({ message: "The admission intake has changed. Reload this page before applying." });
     const version = settings.updatedAt?.toISOString() || "";
     if (body.settingsVersion !== version) return res.status(409).json({ message: "Admission details have changed. Reload this page and check the current fee and payment instructions before applying." });
+    if (!validNic(body.nic)) return res.status(400).json({ message: "Enter a valid NIC number: 12 digits, or 9 digits followed by V or X." });
+    let customAnswers;
+    try { customAnswers = validateCustomAnswers(body.customAnswers, settings.formFields, settings.centres); }
+    catch (error) { return res.status(400).json({ message: error.message }); }
+    const activeFields = shownAdmissionFields(settings.formFields, settings.centres);
+    for (const field of activeFields) {
+      if (isCoreField(field.id) && field.required && !validText(body[field.id], 300)) return res.status(400).json({ message: `${field.label} is required.` });
+    }
+    // Hidden optional fields are not collected, even if a client sends them.
+    for (const id of ["email", "whatsapp"]) if (!activeFields.some(field => field.id === id)) body[id] = "";
     const required = { fullName: 150, district: 100, school: 180 };
     const optional = { whatsapp: 30, email: 150, centre: 180, paymentReference: 150, coordinatorName: 150 };
     if (Object.entries(required).some(([key, max]) => !validText(body[key], max)) ||
@@ -60,7 +72,7 @@ router.post("/admissions", rateLimit("admission", 15), upload.single("receipt"),
       return res.status(409).json({ message: "Admission settings have just changed or admissions have closed. Reload the page or contact EMSAM." });
     }
     const details = Object.fromEntries([...Object.keys(required), ...Object.keys(optional), "phone", "stream"].map(key => [key, typeof body[key] === "string" ? body[key].trim() : ""]));
-    const entry = await Admission.create({ ...details, alYear: Number(body.alYear), paymentMethod: body.paymentMethod,
+    const entry = await Admission.create({ ...details, nic: body.nic.trim().toUpperCase(), customAnswers, alYear: Number(body.alYear), paymentMethod: body.paymentMethod,
       paymentReference: body.paymentMethod === "bank" ? body.paymentReference.trim() : "",
       coordinatorName: body.paymentMethod === "coordinator" ? body.coordinatorName.trim() : "",
       year: settings.year, title: settings.title, fee: settings.fee, submissionKey: body.submissionKey,
@@ -79,6 +91,24 @@ router.post("/admissions", rateLimit("admission", 15), upload.single("receipt"),
 
 router.use("/admin/admissions", requireAuth, requireAdmin, (_req, res, next) => { res.set("Cache-Control", "no-store"); next(); });
 router.get("/admin/admissions/settings", async (_req, res) => res.json(await getAdmissionSettings()));
+router.put("/admin/admissions/form", async (req, res) => {
+  const b = req.body || {};
+  if (!validText(b.formHeading, 150) || !validText(b.formIntro, 500, true) || typeof b.version !== "string") return res.status(400).json({ message: "Enter a form heading and introduction up to 500 characters." });
+  let fields;
+  try { fields = validateFormDesign(b.formFields); }
+  catch (error) { return res.status(400).json({ message: error.message }); }
+  const current = await getAdmissionSettings();
+  if (b.version !== (current.updatedAt?.toISOString() || "")) return res.status(409).json({ message: "Admission settings changed in another session. Reload the workspace before saving your design." });
+  const values = { formFields: fields, formHeading: b.formHeading.trim(), formIntro: b.formIntro?.trim() || "" };
+  let saved;
+  try {
+    saved = current.isNew ? await AdmissionSettings.create({ _id: "current", ...values }) :
+      await AdmissionSettings.findOneAndUpdate({ _id: "current", updatedAt: current.updatedAt }, { $set: values }, { returnDocument: "after", runValidators: true });
+  } catch (error) { if (error.code !== 11000) throw error; }
+  if (!saved) return res.status(409).json({ message: "Admission settings changed in another session. Reload the workspace before saving your design." });
+  // Saving the design never changes the intake's open/closed state or payment settings.
+  res.json(saved);
+});
 router.put("/admin/admissions/settings", async (req, res) => {
   const b = req.body || {};
   if (!validText(b.title, 150) || !validText(b.description, 4000) || !validYear(b.year) || typeof b.isOpen !== "boolean" ||
@@ -117,11 +147,18 @@ router.get("/admin/admissions/export", async (req, res) => {
   const filter = filters(req.query);
   if (await Admission.countDocuments(filter) > 10000) return res.status(400).json({ message: "Filter by intake year or payment status to export fewer than 10,000 applications." });
   const entries = await Admission.find(filter).sort({ createdAt: -1 }).lean();
-  const columns = { reference: "Application reference", examIndex: "Examination index", title: "Intake", year: "Intake year", fullName: "Full name", district: "District", phone: "Phone", whatsapp: "WhatsApp", email: "Email", school: "School", stream: "Stream", alYear: "A/L year", centre: "Examination centre", fee: "Fee (LKR)", paymentMethod: "Payment method", paymentReference: "Bank reference name", coordinatorName: "Coordinator", paymentStatus: "Payment status", adminNotes: "Admin notes" };
-  const rows = entries.map(entry => [...Object.keys(columns).map(key => entry[key] ?? ""), entry.receiptId ? "Yes" : "No", entry.createdAt.toISOString(), entry.consentAt.toISOString(), entry.reviewedAt?.toISOString() || ""]);
-  const sheet = XLSX.utils.aoa_to_sheet([[...Object.values(columns), "Receipt uploaded", "Submitted (UTC)", "Declaration accepted (UTC)", "Reviewed (UTC)"], ...rows]);
+  const columns = { reference: "Application reference", examIndex: "Examination index", title: "Intake", year: "Intake year", fullName: "Full name", nic: "NIC number", district: "District", phone: "Phone", whatsapp: "WhatsApp", email: "Email", school: "School", stream: "Stream", alYear: "A/L year", centre: "Examination centre", fee: "Fee (LKR)", paymentMethod: "Payment method", paymentReference: "Bank reference name", coordinatorName: "Coordinator", paymentStatus: "Payment status", adminNotes: "Admin notes" };
+  const customColumns = new Map();
+  const answerKey = answer => JSON.stringify([answer.fieldId, answer.label, answer.type]);
+  for (const entry of entries) for (const answer of entry.customAnswers || []) customColumns.set(answerKey(answer), answer.label);
+  const rows = entries.map(entry => {
+    const answers = new Map((entry.customAnswers || []).map(answer => [answerKey(answer), answer.value]));
+    return [...Object.keys(columns).map(key => entry[key] ?? ""), entry.receiptId ? "Yes" : "No", entry.createdAt.toISOString(), entry.consentAt.toISOString(), entry.reviewedAt?.toISOString() || "", ...Array.from(customColumns.keys(), key => answers.get(key) || "")];
+  });
+  const headers = [...Object.values(columns), "Receipt uploaded", "Submitted (UTC)", "Declaration accepted (UTC)", "Reviewed (UTC)", ...Array.from(customColumns.values(), (label, index) => `Additional ${index + 1}: ${label}`)];
+  const sheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
   // Text cells remain strings (including phone numbers, leading zeroes and formula-like input).
-  sheet["!cols"] = Array.from({ length: Object.keys(columns).length + 4 }, () => ({ wch: 24 }));
+  sheet["!cols"] = headers.map(() => ({ wch: 24 }));
   sheet["!autofilter"] = { ref: sheet["!ref"] };
   const book = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(book, sheet, "Admissions");
   res.set({ "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": 'attachment; filename="EMSAM-admissions.xlsx"' });

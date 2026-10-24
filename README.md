@@ -448,3 +448,11 @@ Admissions default to **closed**, with a draft 2027 intake, the previous form's 
 The printable confirmation is not an examination admission ticket. Examination indices are assigned by admins and included in the Excel register; distributing final tickets or notifications remains an EMSAM administration step. No automatic email/SMS is sent.
 
 Run `npm run test:integration --prefix backend` to check permissions, both payment methods, private receipt downloads, file validation, closed/expired admissions, duplicate retries, examination index uniqueness and Excel export using isolated temporary MongoDB databases.
+
+### NIC and application form designer
+
+Every new application requires a Sri Lankan NIC in either the 12-digit format or the 9-digit format followed by V/X. The server validates the format, normalizes the suffix to uppercase, and stores it as text to preserve leading zeroes. NIC is visible in authenticated admin application details and the Excel export; it is not returned by the public submission API. Older applications without NIC remain reviewable and display “Not provided”.
+
+Open **Admin > Manage Admissions > Form designer** to customize the application section. Administrators can edit its heading/introduction, field labels, help text, placeholders, order and full/half-row widths. Optional standard fields can be hidden or made required. NIC and the other required standard fields remain visible and required. Add up to 20 additional fields using short/long answers, dropdowns, numbers, dates, checkboxes or section headings. The same renderer provides the student form and desktop/phone previews.
+
+Select **Save form design** to publish changes. This saves only the form design, preserving the intake status and payment details. Concurrent changes are detected so an outdated design cannot overwrite newer settings. The server validates all required answers and supported values; answers retain their original labels and types for admin review and Excel export even after a question is renamed or removed. Payment and declaration sections are fixed parts of the application.

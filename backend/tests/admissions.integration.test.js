@@ -36,7 +36,7 @@ test("admissions: settings, public submissions, private receipts and Excel regis
   const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII=", "base64");
   function form(overrides = {}, file) {
     const value = new FormData();
-    const fields = { submissionKey: randomUUID(), settingsVersion: settings.updatedAt || "", year: settings.year, fullName: "TEST APPLICANT", district: "Mullaitivu", phone: "0771234567", school: "Mu/Vidyananda College", stream: "Biological Science", alYear: "2027", centre: settings.centres[0], paymentMethod: "coordinator", coordinatorName: "Test coordinator", consent: "true", ...overrides };
+    const fields = { submissionKey: randomUUID(), settingsVersion: settings.updatedAt || "", year: settings.year, fullName: "TEST APPLICANT", nic: "200012345678", district: "Mullaitivu", phone: "0771234567", school: "Mu/Vidyananda College", stream: "Biological Science", alYear: "2027", centre: settings.centres[0], paymentMethod: "coordinator", coordinatorName: "Test coordinator", consent: "true", ...overrides };
     for (const [key, item] of Object.entries(fields)) value.append(key, item);
     if (file) value.append("receipt", new Blob([file], { type: "image/png" }), "receipt.png");
     return value;
