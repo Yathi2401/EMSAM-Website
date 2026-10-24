@@ -22,6 +22,7 @@ const mark = { type: Number, min: 0, max: 100, default: null };
 export const User = mongoose.model("User", schema({
   full_name: text(150, true),
   email: { ...text(150, true), lowercase: true, unique: true },
+  index_number: { ...text(30), uppercase: true, unique: true, sparse: true },
   phone: text(30), school: text(180),
   stream: { type: String, enum: [...examStreams, "Other"], default: "Other" },
   al_year: year,

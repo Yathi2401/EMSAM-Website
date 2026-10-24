@@ -80,3 +80,11 @@
   .admin-two-fields { grid-template-columns: 1fr; }
   .admin-form input, .admin-form select, .admin-form textarea, .user-search { font-size: 16px; }
 }
+
+.profile-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.profile-heading h2 { margin: 0; }
+.profile-heading button { padding: 11px 16px; border: 0; border-radius: 8px; background: #d8a63a; color: #071b33; font-weight: 800; cursor: pointer; }
+.profile-edit.auth-card { max-width: none; padding: 0; border: 0; box-shadow: none; }
+.profile-actions { display: flex; gap: 12px; }
+.profile-actions button:last-child { background: #edf2f7; }
+.profile-grid strong { overflow-wrap: anywhere; }

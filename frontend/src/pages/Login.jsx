@@ -9,7 +9,7 @@ import "./Auth.css";
 
 function Login() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ identifier: "", password: "" });
   const [status, setStatus] = useState({ type: "", message: "" });
   const [loading, setLoading] = useState(false);
 
@@ -55,8 +55,8 @@ function Login() {
             </div>
 
             <form onSubmit={handleSubmit}>
-              <label htmlFor="email">Email Address</label>
-              <input id="email" name="email" type="email" value={form.email} onChange={handleChange} required />
+              <label htmlFor="identifier">Email or Index Number</label>
+              <input id="identifier" name="identifier" type="text" autoComplete="username" value={form.identifier} onChange={handleChange} required />
               <label htmlFor="password">Password</label>
               <input id="password" name="password" type="password" value={form.password} onChange={handleChange} required />
               <button type="submit" disabled={loading}>{loading ? "Logging in..." : "Login"}</button>

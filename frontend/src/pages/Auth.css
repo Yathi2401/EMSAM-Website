@@ -19,3 +19,5 @@
 .full-field { grid-column: 1 / -1; }
 .register-grid button { grid-column: 1 / -1; }
 @media (max-width: 600px) { .auth-section { padding: 70px 20px; } .auth-card { padding: 27px 20px; } .register-grid { grid-template-columns: 1fr; } .full-field, .register-grid button { grid-column: auto; } }
+
+.auth-card small { display: block; margin-top: 7px; color: #647587; line-height: 1.5; }

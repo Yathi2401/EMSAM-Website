@@ -55,6 +55,38 @@ test("MongoDB API, seeding and transactional imports", { timeout: 1200000 }, asy
     assert.equal((await request("/auth/me", { token: login.data.token })).status, 401);
     assert.equal((await request("/auth/register", { method: "POST", body: { ...body, email: { $ne: null } } })).status, 400);
   });
+  await t.test("optional index login and authenticated profile editing", async () => {
+    const body = { fullName: "Profile Student", email: "profile@example.test", password: "StudentTest123", indexNumber: "dw/001" };
+    assert.equal((await request("/auth/register", { method: "POST", body })).status, 201);
+    assert.equal((await request("/auth/register", { method: "POST", body: { ...body, email: "duplicate@example.test", indexNumber: "DW/001" } })).status, 409);
+    const login = await request("/auth/login", { method: "POST", body: { identifier: " dw/001 ", password: body.password } });
+    assert.equal(login.status, 200);
+    assert.equal((await request("/auth/login", { method: "POST", body: { identifier: "DW/001", password: "wrong" } })).status, 401);
+    const edits = { fullName: "Updated Name", email: "updated@example.test", phone: "", school: "My Other School", stream: "Biological Science", alYear: "2028", indexNumber: "00042", role: "admin", is_active: false };
+    assert.equal((await request("/auth/me", { method: "PUT", body: edits })).status, 401);
+    const saved = await request("/auth/me", { method: "PUT", token: login.data.token, body: edits });
+    assert.equal(saved.status, 200);
+    assert.equal(saved.data.role, "student");
+    assert.equal(saved.data.is_active, true);
+    assert.equal(saved.data.password_hash, undefined);
+    assert.equal(saved.data.index_number, "00042");
+    const refreshed = (await request("/auth/me", { token: login.data.token })).data;
+    assert.equal(refreshed.full_name, edits.fullName);
+    assert.equal(refreshed.school, edits.school);
+    assert.equal((await request("/auth/login", { method: "POST", body: { identifier: "00042", password: body.password } })).status, 200);
+    assert.equal((await request("/auth/login", { method: "POST", body: { email: edits.email, password: body.password } })).status, 200);
+    for (const invalid of [{ indexNumber: { $ne: null } }, { indexNumber: "a@b" }, { fullName: " " }, { email: "invalid" }, { alYear: "2200" }]) {
+      assert.equal((await request("/auth/me", { method: "PUT", token: login.data.token, body: { ...edits, ...invalid } })).status, 400);
+    }
+    assert.equal((await request("/auth/me", { method: "PUT", token: login.data.token, body: { ...edits, email: "student@example.test" } })).status, 409);
+    assert.equal((await request("/auth/me", { method: "PUT", token: login.data.token, body: { ...edits, indexNumber: "", alYear: "" } })).status, 200);
+    const cleared = (await request("/auth/me", { token: login.data.token })).data;
+    assert.equal(cleared.index_number, undefined);
+    assert.equal(cleared.al_year, undefined);
+    assert.equal((await request("/auth/login", { method: "POST", body: { identifier: "00042", password: body.password } })).status, 401);
+    assert.equal((await request("/auth/register", { method: "POST", body: { ...body, email: "reuse@example.test", indexNumber: "00042" } })).status, 201);
+    assert.equal((await request("/auth/me", { method: "PUT", token: login.data.token, body: edits })).status, 409);
+  });
   await t.test("public search, results, contact messages and admin summary", async () => {
     const papers = await request("/papers?stream=Physical+Science&year=2026");
     assert.equal(papers.status, 200);

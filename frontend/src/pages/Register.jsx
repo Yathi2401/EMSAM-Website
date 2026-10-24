@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FaUserGraduate } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
+import ProfileFields from "../components/ProfileFields";
 import PageHero from "../components/PageHero";
 import SiteFooter from "../components/SiteFooter";
 import SiteNavbar from "../components/SiteNavbar";
@@ -11,6 +12,7 @@ const emptyForm = {
   fullName: "",
   email: "",
   phone: "",
+  indexNumber: "",
   school: "",
   stream: "",
   alYear: "2027",
@@ -71,12 +73,7 @@ function Register() {
             </div>
 
             <form onSubmit={handleSubmit} className="register-grid">
-              <div className="full-field"><label>Full Name</label><input name="fullName" value={form.fullName} onChange={handleChange} required /></div>
-              <div><label>Email Address</label><input name="email" type="email" value={form.email} onChange={handleChange} required /></div>
-              <div><label>Phone Number</label><input name="phone" value={form.phone} onChange={handleChange} /></div>
-              <div><label>School</label><input name="school" value={form.school} onChange={handleChange} /></div>
-              <div><label>A/L Stream</label><select name="stream" value={form.stream} onChange={handleChange} required><option value="">Select stream</option><option>Physical Science</option><option>Biological Science</option><option>Other</option></select></div>
-              <div className="full-field"><label>A/L Examination Year</label><input name="alYear" type="number" min="2026" max="2035" value={form.alYear} onChange={handleChange} /></div>
+              <ProfileFields form={form} onChange={setForm} disabled={loading} />
               <div><label>Password (at least 8 characters)</label><input name="password" type="password" minLength={8} autoComplete="new-password" value={form.password} onChange={handleChange} required /></div>
               <div><label>Confirm Password</label><input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} required /></div>
               <button type="submit" className="full-field" disabled={loading}>{loading ? "Creating account..." : "Create Student Account"}</button>

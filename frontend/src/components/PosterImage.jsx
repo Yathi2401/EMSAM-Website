@@ -32,7 +32,7 @@ export default function PosterImage({ src, alt, className }) {
       </button>
       {open && createPortal(
         <dialog ref={dialogRef} className="poster-dialog" aria-label={alt || "Image preview"}
-          onClose={() => { if (!dialogRef.current?.open) setOpen(false); }}
+          onClose={() => setOpen(false)}
           onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
           <button className="poster-dialog-close" type="button" aria-label="Close image" autoFocus onClick={() => setOpen(false)}><FiX aria-hidden="true" /></button>
           <img className="poster-dialog-image" src={src} alt={alt} />

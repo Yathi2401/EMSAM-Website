@@ -422,3 +422,11 @@ Supporting students through Dreamway, Pathfinder and educational resources.
 [🌐 Website](https://emsam-website.vercel.app) · [💻 GitHub](https://github.com/Yathi2401/EMSAM-Website)
 
 </div>
+
+## Profile editing and index-number login
+
+Students can select **Edit Profile** on their dashboard and save or cancel changes to their name, email, phone, school, stream, examination year and index number. Phone and index number are optional at registration. A supplied index number must be unique; letters are normalized to uppercase and leading zeroes are preserved. Login accepts either email or index number with the existing password. Clearing the index number removes that login option.
+
+Signup and profile editing share a dropdown of 14 Mullaitivu district schools classified as 1AB, with **Other** revealing a required manual school-name field. Sources: [Ministry of Education 2024 provincial school census](https://dmb.moe.gov.lk/2024/01/01_PDF/Tbl20240105.pdf) and [Northern Provincial Education directory](https://www.edudept.np.gov.lk/nearestsch.php) for national schools. Classification indicates A/L science provision; current availability of both streams is not independently confirmed. Maintain the list in `frontend/src/data/schools.js`.
+
+The backend creates the unique sparse `users.index_number` index during normal startup (including hosted API initialization). Existing accounts without an index number continue to work. Profile updates use authenticated `PUT /api/auth/me`; role, password and account status cannot be changed through this endpoint.
