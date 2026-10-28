@@ -36,3 +36,6 @@ playwright-report/
 # Reports and document exports are maintained separately from the website.
 output/
 docs/submission/
+
+# Local Vercel project connection
+.vercel/
