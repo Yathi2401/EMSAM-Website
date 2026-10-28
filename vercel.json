@@ -2,8 +2,35 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "npm ci --prefix backend --omit=dev && npm ci --prefix frontend",
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run db:indexes --prefix backend && npm run build",
   "outputDirectory": "frontend/dist",
+  "crons": [{ "path": "/api/internal/receipt-retention", "schedule": "0 2 * * *" }],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+      ]
+    },
+    {
+      "source": "/reset-password",
+      "headers": [
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/:page(login|register|forgot-password|reset-password|dashboard|admin)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/admin/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    }
+  ],
   "functions": {
     "api/index.js": {
       "maxDuration": 60,
@@ -12,6 +39,13 @@
   },
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index" },
+    {
+      "source": "/:page(about|dreamway|pathfinder|past-papers|results|announcements|admissions|contact|privacy|login|register|forgot-password|reset-password|dashboard|admin)",
+      "destination": "/:page/index.html"
+    },
+    { "source": "/admin/admissions", "destination": "/admin/admissions/index.html" },
+    { "source": "/robots.txt", "destination": "/robots.txt" },
+    { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
     { "source": "/((?!api/|uploads/|assets/|media/).*)", "destination": "/index.html" }
   ]
 }

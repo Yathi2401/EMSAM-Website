@@ -27,9 +27,21 @@ function Pathfinder() {
               </p>
             </div>
             <div className="pathfinder-focus-grid">
-              <article><FaGraduationCap /><h3>University Courses</h3><p>Degree options, entry routes and course information for science students.</p></article>
-              <article><FaFileAlt /><h3>Preference Form Guidance</h3><p>Step-by-step support for completing first and second preference selections.</p></article>
-              <article><FaBriefcase /><h3>Career Pathways</h3><p>Career opportunities, professional routes and current job-market awareness.</p></article>
+              <article>
+                <FaGraduationCap />
+                <h3>University Courses</h3>
+                <p>Degree options, entry routes and course information for science students.</p>
+              </article>
+              <article>
+                <FaFileAlt />
+                <h3>Preference Form Guidance</h3>
+                <p>Step-by-step support for completing first and second preference selections.</p>
+              </article>
+              <article>
+                <FaBriefcase />
+                <h3>Career Pathways</h3>
+                <p>Career opportunities, professional routes and current job-market awareness.</p>
+              </article>
             </div>
           </div>
         </section>
@@ -53,7 +65,8 @@ function Pathfinder() {
             <p>Guiding Minds. Building Futures.</p>
             <h2>Plan Today, Lead Tomorrow</h2>
             <span>
-              Future Pathfinder registrations and resources can be managed through the EMSAM admin dashboard.
+              Future Pathfinder registrations and resources can be managed through the EMSAM admin
+              dashboard.
             </span>
           </div>
         </section>

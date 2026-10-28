@@ -31,3 +31,8 @@ Thumbs.db
 
 # Local PDF inspection and development artifacts
 tmp/
+test-results/
+playwright-report/
+# Reports and document exports are maintained separately from the website.
+output/
+docs/submission/

@@ -116,7 +116,9 @@ function PastPapers() {
               </select>
 
               <button type="submit">Apply Filters</button>
-              <button type="button" className="clear-button" onClick={clearFilters}>Clear</button>
+              <button type="button" className="clear-button" onClick={clearFilters}>
+                Clear
+              </button>
             </form>
 
             <div className="papers-result-header">
@@ -134,11 +136,17 @@ function PastPapers() {
               <div className="paper-grid">
                 {papers.map((paper) => (
                   <article className="paper-card" key={paper.id}>
-                    <div className="paper-icon"><FaFilePdf /></div>
+                    <div className="paper-icon">
+                      <FaFilePdf />
+                    </div>
                     <div className="paper-card-info">
-                      <span>{paper.subject} • {paper.exam_year}</span>
+                      <span>
+                        {paper.subject} • {paper.exam_year}
+                      </span>
                       <h3>{paper.title}</h3>
-                      <p>{paper.stream} | {paper.paper_type}</p>
+                      <p>
+                        {paper.stream} | {paper.paper_type}
+                      </p>
                     </div>
                     <a href={serverFileUrl(paper.file_url)} target="_blank" rel="noreferrer">
                       <FaDownload /> Download

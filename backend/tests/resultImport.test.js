@@ -2,7 +2,21 @@
 import assert from "node:assert/strict";
 import { prepareResultRows } from "../utils/resultImport.js";
 
-const header = ["NAME", "INDEX NO", "BIO", "GRADE", "Z", "PHY", "GRADE", "Z", "CHE", "GRADE", "Z", "Z.Average", "Rank"];
+const header = [
+  "NAME",
+  "INDEX NO",
+  "BIO",
+  "GRADE",
+  "Z",
+  "PHY",
+  "GRADE",
+  "Z",
+  "CHE",
+  "GRADE",
+  "Z",
+  "Z.Average",
+  "Rank",
+];
 const record = ["Test Student", "00123", 75, "A", null, 60, "B", null, 50, "C", null, "_", "_"];
 
 test("missing numeric values become null without mutating source rows", () => {
@@ -26,7 +40,10 @@ test("zero marks and zero Z average remain zero", () => {
 
 test("rejects wrong stream, duplicate indices and invalid numbers before writes", () => {
   assert.throws(() => prepareResultRows([header, record], "Physical Science"), /columns/);
-  assert.throws(() => prepareResultRows([header, record, record], "Biological Science"), /duplicate/);
+  assert.throws(
+    () => prepareResultRows([header, record, record], "Biological Science"),
+    /duplicate/,
+  );
   const invalid = [...record];
   invalid[2] = "invalid";
   assert.throws(() => prepareResultRows([header, invalid], "Biological Science"), /Row 2/);
@@ -36,5 +53,3 @@ test("rejects incomplete rows and empty workbooks", () => {
   assert.throws(() => prepareResultRows([header, ["Student"]], "Biological Science"), /index/);
   assert.throws(() => prepareResultRows([header, []], "Biological Science"), /no result/);
 });
-
-

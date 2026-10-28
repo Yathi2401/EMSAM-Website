@@ -1,0 +1,14 @@
+node_modules/
+frontend/dist/
+frontend/build/
+backend/dist/
+backend/build/
+backend/data/
+backend/uploads/
+frontend/public/
+.mongo-data/
+tmp/
+package-lock.json
+**/package-lock.json
+test-results/
+playwright-report/

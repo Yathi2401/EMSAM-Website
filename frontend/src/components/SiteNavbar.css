@@ -14,11 +14,11 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  border: 1px solid rgba(255,255,255,0.17);
+  border: 1px solid rgba(255, 255, 255, 0.17);
   border-radius: 14px;
-  background: rgba(3,18,35,0.9);
+  background: rgba(3, 18, 35, 0.9);
   backdrop-filter: blur(16px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
 }
 
 .site-brand {
@@ -39,7 +39,7 @@
   object-fit: cover;
   border: 2px solid #d8a63a;
   border-radius: 50%;
-  box-shadow: 0 0 15px rgba(216,166,58,0.28);
+  box-shadow: 0 0 15px rgba(216, 166, 58, 0.28);
 }
 
 .site-nav-links {
@@ -110,10 +110,10 @@
   min-width: 170px;
   padding: 8px;
   display: none;
-  border: 1px solid rgba(255,255,255,0.13);
+  border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 10px;
   background: #061a32;
-  box-shadow: 0 14px 30px rgba(0,0,0,0.28);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
 }
 
 .more-menu:hover .more-dropdown,
@@ -145,7 +145,7 @@
   text-decoration: none;
   font-size: 14px;
   font-weight: 900;
-  box-shadow: 0 7px 18px rgba(216,166,58,0.24);
+  box-shadow: 0 7px 18px rgba(216, 166, 58, 0.24);
   transition: transform 0.25s ease;
 }
 
@@ -164,8 +164,13 @@
 }
 
 @media (max-width: 960px) {
-  .site-navbar { width: 100%; max-width: 100%; }
-  .menu-button { display: block; }
+  .site-navbar {
+    width: 100%;
+    max-width: 100%;
+  }
+  .menu-button {
+    display: block;
+  }
   .site-nav-links {
     position: absolute;
     top: 76px;
@@ -177,26 +182,40 @@
     flex-direction: column;
     align-items: stretch;
     gap: 5px;
-    border: 1px solid rgba(255,255,255,0.14);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 14px;
     background: #061a32;
-    box-shadow: 0 18px 40px rgba(0,0,0,0.3);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
   }
-  .site-nav-links.open { display: flex; }
+  .site-nav-links.open {
+    display: flex;
+  }
   .site-nav-links > a,
-  .more-menu > button { padding: 11px; text-align: left; }
-  .site-nav-links > a::after { display: none; }
-  .more-menu > button { width: 100%; justify-content: space-between; }
+  .more-menu > button {
+    padding: 11px;
+    text-align: left;
+  }
+  .site-nav-links > a::after {
+    display: none;
+  }
+  .more-menu > button {
+    width: 100%;
+    justify-content: space-between;
+  }
   .more-dropdown {
     position: static;
     margin-top: 4px;
     display: grid;
     box-shadow: none;
-    background: rgba(255,255,255,0.04);
+    background: rgba(255, 255, 255, 0.04);
   }
-  .nav-login { margin-left: 0; }
+  .nav-login {
+    margin-left: 0;
+  }
 }
 
 @media (max-width: 430px) {
-  .site-brand span { display: none; }
+  .site-brand span {
+    display: none;
+  }
 }

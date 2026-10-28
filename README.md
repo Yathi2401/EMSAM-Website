@@ -54,7 +54,7 @@ It provides:
 | 🗄️ Database | MongoDB Atlas | Private MongoDB database |
 | 💻 Source Code | GitHub | [Yathi2401/EMSAM-Website](https://github.com/Yathi2401/EMSAM-Website) |
 
-> MongoDB Atlas hosts the database, not the Express API. Run the backend locally for development. The published frontend needs a publicly reachable backend with its own environment settings; a local backend is not available to other website visitors.
+> MongoDB Atlas stores the application data. Vercel serves the frontend and the Express API through `/api` routes. Local development runs Vite and Express separately.
 
 ---
 
@@ -429,11 +429,11 @@ Students can select **Edit Profile** on their dashboard and save or cancel chang
 
 Signup and profile editing share a dropdown of 14 Mullaitivu district schools classified as 1AB, with **Other** revealing a required manual school-name field. Sources: [Ministry of Education 2024 provincial school census](https://dmb.moe.gov.lk/2024/01/01_PDF/Tbl20240105.pdf) and [Northern Provincial Education directory](https://www.edudept.np.gov.lk/nearestsch.php) for national schools. Classification indicates A/L science provision; current availability of both streams is not independently confirmed. Maintain the list in `frontend/src/data/schools.js`.
 
-The backend creates the unique sparse `users.index_number` index during normal startup (including hosted API initialization). Existing accounts without an index number continue to work. Profile updates use authenticated `PUT /api/auth/me`; role, password and account status cannot be changed through this endpoint.
+The backend creates the unique sparse `users.index_number` index during normal startup (during the Vercel deployment build). Existing accounts without an index number continue to work. Profile updates use authenticated `PUT /api/auth/me`; role, password and account status cannot be changed through this endpoint.
 
 ## Online examination admissions
 
-Students apply at `/admissions`, accessible from the navigation and Dreamway page. The form follows the paper's full name, stream, school, district, centre and contact fields, with A/L year, optional WhatsApp/email, payment details and a declaration. Students review their details before submitting and can print/save a submission confirmation. An account is not required.
+Students apply at `/admissions`, accessible from the Dreamway page. The form follows the paper's full name, stream, school, district, centre and contact fields, with A/L year, optional WhatsApp/email, payment details and a declaration. Students review their details before submitting and can print/save a submission confirmation. An account is not required.
 
 Administrators use **Dashboard > Manage Admissions** (`/admin/admissions`):
 
@@ -456,3 +456,42 @@ Every new application requires a Sri Lankan NIC in either the 12-digit format or
 Open **Admin > Manage Admissions > Form designer** to customize the application section. Administrators can edit its heading/introduction, field labels, help text, placeholders, order and full/half-row widths. Optional standard fields can be hidden or made required. NIC and the other required standard fields remain visible and required. Add up to 20 additional fields using short/long answers, dropdowns, numbers, dates, checkboxes or section headings. The same renderer provides the student form and desktop/phone previews.
 
 Select **Save form design** to publish changes. This saves only the form design, preserving the intake status and payment details. Concurrent changes are detected so an outdated design cannot overwrite newer settings. The server validates all required answers and supported values; answers retain their original labels and types for admin review and Excel export even after a question is renamed or removed. Payment and declaration sections are fixed parts of the application.
+
+## ?? Development and Code Formatting
+
+Install the root development tools with `npm ci`. Use `npm run format` to format source files and `npm run format:check` to verify them. Formatting uses two-space indentation and a 100-character line target; uploads, generated assets and lockfiles are excluded.
+
+## ?? Browser Tests
+
+The browser suite checks announcement creation, search, filtering, sorting, editing, cancellation and deletion, including persistence after refreshing. It also checks keyboard focus and responsive layouts at 375, 768 and 1365 pixels.
+
+```powershell
+npm ci
+npm ci --prefix backend
+npm ci --prefix frontend
+npx playwright install chromium
+npm run test:browser
+```
+
+Tests start a temporary MongoDB replica set and local servers on ports 5008 and 5178. They use isolated test records and never connect to the configured production database. Keep these ports free. Results and screenshots are written to ignored `test-results/`. GitHub Actions runs the build, formatting, dependency audits and automated tests.
+
+## ?? Announcement Management
+
+The administrator dashboard supports title/summary search, category filtering, newest/oldest/title sorting, expandable details and five-record pages. Editing preserves the selected record until saved; Cancel discards form changes. Deleting an announcement requires confirmation and administrator authorization.
+
+## ?? Password Recovery and Privacy
+
+Password reset links expire after 30 minutes, can be used only once, and invalidate previous login sessions after redemption. Configure a verified SMTP sender before offering email recovery. Without SMTP settings, the website directs users to contact EMSAM.
+
+The privacy page describes admission data handling. A protected daily retention job removes eligible receipt files after one year while keeping admission records and payment status. Backups need their own retention policy.
+
+## ?? Production Readiness
+
+See [deployment setup](backend/database/DEPLOYMENT.md), [database design](backend/database/ERD.md) and [hosting checklist](LAUNCH_CHECKLIST.md) for environment settings, indexes, mail delivery, backups and monitoring.
+
+```powershell
+npm run check:config
+npm run check:deployment -- https://emsam-website.vercel.app
+```
+
+The configuration check does not print credentials. The deployment check reads public pages, static assets and API health without submitting forms or changing records.

@@ -7,7 +7,7 @@ import { apiRequest } from "../services/api";
 import "./Results.css";
 
 function Results() {
-  const [form, setForm] = useState({ indexNumber: "", stream: "" });
+  const [form, setForm] = useState({ indexNumber: "", stream: "", year: "2026" });
   const [result, setResult] = useState(null);
   const [status, setStatus] = useState({ type: "", message: "" });
   const [loading, setLoading] = useState(false);
@@ -28,7 +28,7 @@ function Results() {
 
     setLoading(true);
     try {
-      const query = new URLSearchParams({ ...form, year: "2026" });
+      const query = new URLSearchParams(form);
       const data = await apiRequest(`/results?${query.toString()}`);
       setResult(data);
     } catch (error) {
@@ -51,7 +51,7 @@ function Results() {
       <SiteNavbar />
       <main>
         <PageHero
-          eyebrow="Dreamway Examination 2026"
+          eyebrow="Dreamway Examination Results"
           title="Check Your Results"
           description="Results are not displayed as a public list. Enter the correct index number and stream to retrieve an individual result. Anyone with these details can look up a result."
           image="/media/dreamway-results-2026.jpg"
@@ -84,11 +84,28 @@ function Results() {
                 <option>Biological Science</option>
               </select>
 
+              <label htmlFor="result-year">Examination Year</label>
+              <input
+                id="result-year"
+                name="year"
+                type="number"
+                min="2000"
+                max="2100"
+                step="1"
+                required
+                value={form.year}
+                onChange={handleChange}
+              />
+
               <button type="submit" disabled={loading}>
                 {loading ? "Searching..." : "Search Result"}
               </button>
 
-              {status.message && <p role="status" className={`form-status ${status.type}`}>{status.message}</p>}
+              {status.message && (
+                <p role="status" className={`form-status ${status.type}`}>
+                  {status.message}
+                </p>
+              )}
             </form>
 
             <div className="result-display">
@@ -96,7 +113,7 @@ function Results() {
                 <div className="result-placeholder">
                   <FaAward />
                   <h3>Your result will appear here</h3>
-                  <p>Use the form to search the 2026 Dreamway final results.</p>
+                  <p>Select the examination year and stream, then enter your index number.</p>
                 </div>
               ) : (
                 <div className="result-sheet">
@@ -105,7 +122,9 @@ function Results() {
                     <div>
                       <span>Dreamway Examination {result.exam_year}</span>
                       <h2>{result.full_name}</h2>
-                      <p>Index: {result.index_number} • {result.stream}</p>
+                      <p>
+                        Index: {result.index_number} • {result.stream}
+                      </p>
                     </div>
                   </div>
 
@@ -120,8 +139,18 @@ function Results() {
                   </div>
 
                   <div className="result-summary">
-                    <div><span>Z Average</span><strong>{result.z_average == null ? "Not available" : Number(result.z_average).toFixed(4)}</strong></div>
-                    <div><span>Rank</span><strong>{result.rank_number ?? "Not available"}</strong></div>
+                    <div>
+                      <span>Z Average</span>
+                      <strong>
+                        {result.z_average == null
+                          ? "Not available"
+                          : Number(result.z_average).toFixed(4)}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Rank</span>
+                      <strong>{result.rank_number ?? "Not available"}</strong>
+                    </div>
                   </div>
                 </div>
               )}

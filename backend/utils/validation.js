@@ -10,5 +10,10 @@ export function validEmail(value) {
 }
 
 export function validYear(value) {
-  return ["string", "number"].includes(typeof value) && Number.isInteger(Number(value)) && Number(value) >= 2000 && Number(value) <= 2100;
+  return (
+    ["string", "number"].includes(typeof value) &&
+    Number.isInteger(Number(value)) &&
+    Number(value) >= 2000 &&
+    Number(value) <= 2100
+  );
 }

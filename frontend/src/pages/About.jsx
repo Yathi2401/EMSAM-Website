@@ -6,10 +6,26 @@ import SiteNavbar from "../components/SiteNavbar";
 import "./About.css";
 
 const values = [
-  { icon: <FaUsers />, title: "Unity", text: "Bringing students and volunteers together for a shared purpose." },
-  { icon: <FaLightbulb />, title: "Knowledge", text: "Creating access to learning, academic support and guidance." },
-  { icon: <FaHandsHelping />, title: "Service", text: "Supporting students and the Mullaitivu community responsibly." },
-  { icon: <FaStar />, title: "Excellence", text: "Maintaining high standards in every EMSAM programme." },
+  {
+    icon: <FaUsers />,
+    title: "Unity",
+    text: "Bringing students and volunteers together for a shared purpose.",
+  },
+  {
+    icon: <FaLightbulb />,
+    title: "Knowledge",
+    text: "Creating access to learning, academic support and guidance.",
+  },
+  {
+    icon: <FaHandsHelping />,
+    title: "Service",
+    text: "Supporting students and the Mullaitivu community responsibly.",
+  },
+  {
+    icon: <FaStar />,
+    title: "Excellence",
+    text: "Maintaining high standards in every EMSAM programme.",
+  },
 ];
 
 function About() {
@@ -30,16 +46,16 @@ function About() {
               <p className="about-label">Our Story</p>
               <h2>Serving Students Since 2020</h2>
               <p>
-                EMSAM was established to connect engineering and medical students
-                from Mullaitivu and to use their knowledge and experience to support
-                younger students. The association has grown through volunteer service,
-                academic programmes and strong community participation.
+                EMSAM was established to connect engineering and medical students from Mullaitivu
+                and to use their knowledge and experience to support younger students. The
+                association has grown through volunteer service, academic programmes and strong
+                community participation.
               </p>
               <p>
-                Dreamway provides examination support for A/L students, while
-                Pathfinder helps students understand university opportunities and
-                future career choices. Together, these programmes create a clear path
-                from school education to higher education and professional development.
+                Dreamway provides examination support for A/L students, while Pathfinder helps
+                students understand university opportunities and future career choices. Together,
+                these programmes create a clear path from school education to higher education and
+                professional development.
               </p>
             </div>
             <PosterImage
@@ -77,10 +93,22 @@ function About() {
               <h2>Growing With Our Student Community</h2>
             </div>
             <div className="about-impact-grid">
-              <div><strong>2020</strong><span>Established</span></div>
-              <div><strong>1000+</strong><span>Students Participated</span></div>
-              <div><strong>15+</strong><span>Schools Covered</span></div>
-              <div><strong>100+</strong><span>Volunteer Members</span></div>
+              <div>
+                <strong>2020</strong>
+                <span>Established</span>
+              </div>
+              <div>
+                <strong>1000+</strong>
+                <span>Students Participated</span>
+              </div>
+              <div>
+                <strong>15+</strong>
+                <span>Schools Covered</span>
+              </div>
+              <div>
+                <strong>100+</strong>
+                <span>Volunteer Members</span>
+              </div>
             </div>
           </div>
         </section>

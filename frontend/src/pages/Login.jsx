@@ -50,20 +50,52 @@ function Login() {
         <section className="auth-section">
           <div className="auth-card small-card">
             <div className="auth-card-title">
-              <span><FaLock /></span>
-              <div><p>Secure Login</p><h2>Access Your Account</h2></div>
+              <span>
+                <FaLock />
+              </span>
+              <div>
+                <p>Secure Login</p>
+                <h2>Access Your Account</h2>
+              </div>
             </div>
 
             <form onSubmit={handleSubmit}>
               <label htmlFor="identifier">Email or Index Number</label>
-              <input id="identifier" name="identifier" type="text" autoComplete="username" value={form.identifier} onChange={handleChange} required />
+              <input
+                id="identifier"
+                name="identifier"
+                type="text"
+                autoComplete="username"
+                value={form.identifier}
+                onChange={handleChange}
+                required
+              />
               <label htmlFor="password">Password</label>
-              <input id="password" name="password" type="password" value={form.password} onChange={handleChange} required />
-              <button type="submit" disabled={loading}>{loading ? "Logging in..." : "Login"}</button>
-              {status.message && <p className={`form-status ${status.type}`}>{status.message}</p>}
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                value={form.password}
+                onChange={handleChange}
+                required
+              />
+              <button type="submit" disabled={loading}>
+                {loading ? "Logging in..." : "Login"}
+              </button>
+              {status.message && (
+                <p role="alert" className={`form-status ${status.type}`}>
+                  {status.message}
+                </p>
+              )}
             </form>
 
-            <p className="auth-switch">Do not have an account? <Link to="/register">Register here</Link></p>
+            <p className="auth-switch">
+              <Link to="/forgot-password">Forgot your password?</Link>
+            </p>
+            <p className="auth-switch">
+              Do not have an account? <Link to="/register">Register here</Link>
+            </p>
           </div>
         </section>
       </main>

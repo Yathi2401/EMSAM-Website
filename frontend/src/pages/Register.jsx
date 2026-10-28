@@ -68,19 +68,61 @@ function Register() {
         <section className="auth-section">
           <div className="auth-card register-card">
             <div className="auth-card-title">
-              <span><FaUserGraduate /></span>
-              <div><p>Student Registration</p><h2>Join the EMSAM Platform</h2></div>
+              <span>
+                <FaUserGraduate />
+              </span>
+              <div>
+                <p>Student Registration</p>
+                <h2>Join the EMSAM Platform</h2>
+              </div>
             </div>
 
             <form onSubmit={handleSubmit} className="register-grid">
               <ProfileFields form={form} onChange={setForm} disabled={loading} />
-              <div><label>Password (at least 8 characters)</label><input name="password" type="password" minLength={8} autoComplete="new-password" value={form.password} onChange={handleChange} required /></div>
-              <div><label>Confirm Password</label><input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} required /></div>
-              <button type="submit" className="full-field" disabled={loading}>{loading ? "Creating account..." : "Create Student Account"}</button>
+              <div>
+                <label htmlFor="register-password">Password (at least 8 characters)</label>
+                <input
+                  id="register-password"
+                  name="password"
+                  type="password"
+                  minLength={8}
+                  autoComplete="new-password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="register-confirm">Confirm Password</label>
+                <input
+                  id="register-confirm"
+                  name="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <p className="full-field">
+                Read how we use your information in our <Link to="/privacy">privacy notice</Link>.
+              </p>
+              <button type="submit" className="full-field" disabled={loading}>
+                {loading ? "Creating account..." : "Create Student Account"}
+              </button>
             </form>
 
-            {status.message && <p className={`form-status ${status.type}`}>{status.message}</p>}
-            <p className="auth-switch">Already registered? <Link to="/login">Login here</Link></p>
+            {status.message && (
+              <p
+                role={status.type === "error" ? "alert" : "status"}
+                className={`form-status ${status.type}`}
+              >
+                {status.message}
+              </p>
+            )}
+            <p className="auth-switch">
+              Already registered? <Link to="/login">Login here</Link>
+            </p>
           </div>
         </section>
       </main>

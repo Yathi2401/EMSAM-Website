@@ -6,6 +6,12 @@ function ScrollToTop() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
+    const main = document.querySelector("main");
+    if (main) {
+      main.id = "main-content";
+      main.tabIndex = -1;
+      main.focus({ preventScroll: true });
+    }
   }, [pathname]);
 
   return null;

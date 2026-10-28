@@ -30,20 +30,36 @@ function SiteNavbar() {
         </button>
 
         <div className={`site-nav-links ${menuOpen ? "open" : ""}`}>
-          <NavLink to="/" onClick={closeMenu}>Home</NavLink>
-          <NavLink to="/about" onClick={closeMenu}>About</NavLink>
-          <NavLink to="/dreamway" onClick={closeMenu}>Dreamway</NavLink>
-          <NavLink to="/pathfinder" onClick={closeMenu}>Pathfinder</NavLink>
-          <NavLink to="/past-papers" onClick={closeMenu}>Papers</NavLink>
-          <NavLink to="/results" onClick={closeMenu}>Results</NavLink>
+          <NavLink to="/" onClick={closeMenu}>
+            Home
+          </NavLink>
+          <NavLink to="/about" onClick={closeMenu}>
+            About
+          </NavLink>
+          <NavLink to="/dreamway" onClick={closeMenu}>
+            Dreamway
+          </NavLink>
+          <NavLink to="/pathfinder" onClick={closeMenu}>
+            Pathfinder
+          </NavLink>
+          <NavLink to="/past-papers" onClick={closeMenu}>
+            Papers
+          </NavLink>
+          <NavLink to="/results" onClick={closeMenu}>
+            Results
+          </NavLink>
 
           <div className="more-menu">
             <button type="button">
               More <FaChevronDown />
             </button>
             <div className="more-dropdown">
-              <NavLink to="/announcements" onClick={closeMenu}>Announcements</NavLink>
-              <NavLink to="/contact" onClick={closeMenu}>Contact</NavLink>
+              <NavLink to="/announcements" onClick={closeMenu}>
+                Announcements
+              </NavLink>
+              <NavLink to="/contact" onClick={closeMenu}>
+                Contact
+              </NavLink>
             </div>
           </div>
         </div>

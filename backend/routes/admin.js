@@ -17,7 +17,10 @@ const router = express.Router();
 const papersFolder = fileURLToPath(new URL("../uploads/papers/", import.meta.url));
 const tempFolder = fileURLToPath(new URL("../uploads/temp/", import.meta.url));
 const cloud = Boolean(process.env.VERCEL);
-const uploadAnnouncement = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1 } });
+const uploadAnnouncement = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 4 * 1024 * 1024, files: 1 },
+});
 if (!cloud) {
   fs.mkdirSync(papersFolder, { recursive: true });
   fs.mkdirSync(tempFolder, { recursive: true });
@@ -42,12 +45,15 @@ const uploadPaper = multer({
 const uploadSpreadsheet = multer({
   ...(cloud ? { storage: multer.memoryStorage() } : { dest: tempFolder }),
   limits: { fileSize: (cloud ? 4 : 10) * 1024 * 1024, files: 1 },
-  fileFilter: (_req, file, cb) => cb(null, [".xlsx", ".xls"].includes(path.extname(file.originalname).toLowerCase())),
+  fileFilter: (_req, file, cb) =>
+    cb(null, [".xlsx", ".xls"].includes(path.extname(file.originalname).toLowerCase())),
 });
 
 function removeUpload(file) {
   if (!file?.path) return;
-  try { fs.unlinkSync(file.path); } catch (error) {
+  try {
+    fs.unlinkSync(file.path);
+  } catch (error) {
     if (error.code !== "ENOENT") console.error("Unable to remove upload:", error);
   }
 }
@@ -75,8 +81,10 @@ router.get("/papers", async (_req, res, next) => {
 router.get("/summary", async (_req, res) => {
   try {
     const [users, papers, results, messages] = await Promise.all([
-      User.countDocuments({ role: "student" }), PastPaper.countDocuments(),
-      ExamResult.countDocuments(), ContactMessage.countDocuments({ status: "new" }),
+      User.countDocuments({ role: "student" }),
+      PastPaper.countDocuments(),
+      ExamResult.countDocuments(),
+      ContactMessage.countDocuments({ status: "new" }),
     ]);
 
     res.json({
@@ -102,14 +110,23 @@ router.get("/messages", async (_req, res) => {
 });
 
 router.patch("/messages/:id", async (req, res, next) => {
-  if (!mongoose.isObjectIdOrHexString(req.params.id) || !["new", "read", "replied"].includes(req.body?.status)) {
+  if (
+    !mongoose.isObjectIdOrHexString(req.params.id) ||
+    !["new", "read", "replied"].includes(req.body?.status)
+  ) {
     return res.status(400).json({ message: "Provide a valid message ID and status." });
   }
   try {
-    const message = await ContactMessage.findByIdAndUpdate(req.params.id, { $set: { status: req.body.status } }, { new: true, runValidators: true });
+    const message = await ContactMessage.findByIdAndUpdate(
+      req.params.id,
+      { $set: { status: req.body.status } },
+      { new: true, runValidators: true },
+    );
     if (!message) return res.status(404).json({ message: "Message not found." });
     res.json({ message: "Message status updated." });
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.get("/users", async (_req, res) => {
@@ -123,38 +140,61 @@ router.get("/users", async (_req, res) => {
 });
 
 function validAnnouncement({ category, title, summary, eventDate, imageUrl } = {}) {
-  const validDate = eventDate == null || eventDate === "" || (
-    typeof eventDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(eventDate) &&
-    Number.isFinite(Date.parse(eventDate)) && new Date(eventDate).toISOString().slice(0, 10) === eventDate
+  const validDate =
+    eventDate == null ||
+    eventDate === "" ||
+    (typeof eventDate === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(eventDate) &&
+      Number.isFinite(Date.parse(eventDate)) &&
+      new Date(eventDate).toISOString().slice(0, 10) === eventDate);
+  return (
+    validText(category, 80) &&
+    validText(title, 200) &&
+    validText(summary, 10000) &&
+    validText(imageUrl, 500, true) &&
+    validDate
   );
-  return validText(category, 80) && validText(title, 200) && validText(summary, 10000) &&
-    validText(imageUrl, 500, true) && validDate;
 }
 
 router.post("/announcements", uploadAnnouncement.single("photo"), async (req, res) => {
   const { category, title, summary, eventDate, imageUrl } = req.body || {};
 
   if (!validAnnouncement(req.body || {})) {
-    return res.status(400).json({ message: "Provide category (up to 80 characters), title (200), summary (10,000), and a valid optional date and image path (500)." });
+    return res.status(400).json({
+      message:
+        "Provide category (up to 80 characters), title (200), summary (10,000), and a valid optional date and image path (500).",
+    });
   }
 
   let uploadedUrl;
   try {
     if (req.file) uploadedUrl = await saveImage(req.file);
-    const result = await Announcement.create({ category, title, summary, event_date: eventDate || null, image_url: uploadedUrl || imageUrl || null });
+    const result = await Announcement.create({
+      category,
+      title,
+      summary,
+      event_date: eventDate || null,
+      image_url: uploadedUrl || imageUrl || null,
+    });
 
     res.status(201).json({ message: "Announcement published.", id: result.id });
   } catch (error) {
     console.error(error);
     if (uploadedUrl) await removeImage(uploadedUrl);
-    res.status(error.status === 400 ? 400 : 500).json({ message: error.status === 400 ? error.message : "Unable to publish announcement." });
+    res
+      .status(error.status === 400 ? 400 : 500)
+      .json({ message: error.status === 400 ? error.message : "Unable to publish announcement." });
   }
 });
 
 router.put("/announcements/:id", uploadAnnouncement.single("photo"), async (req, res) => {
-  if (!mongoose.isObjectIdOrHexString(req.params.id)) return res.status(400).json({ message: "Invalid announcement ID." });
+  if (!mongoose.isObjectIdOrHexString(req.params.id))
+    return res.status(400).json({ message: "Invalid announcement ID." });
   if (!validAnnouncement(req.body || {})) {
-    return res.status(400).json({ message: "Provide category (up to 80 characters), title (200), summary (10,000), and a valid optional date and image path (500)." });
+    return res.status(400).json({
+      message:
+        "Provide category (up to 80 characters), title (200), summary (10,000), and a valid optional date and image path (500).",
+    });
   }
   const { category, title, summary, eventDate, imageUrl } = req.body;
   let uploadedUrl;
@@ -162,10 +202,15 @@ router.put("/announcements/:id", uploadAnnouncement.single("photo"), async (req,
     const previous = await Announcement.findById(req.params.id);
     if (!previous) return res.status(404).json({ message: "Announcement not found." });
     if (req.file) uploadedUrl = await saveImage(req.file);
-    const nextImage = uploadedUrl || (imageUrl === undefined ? previous.image_url : imageUrl || null);
-    const result = await Announcement.findByIdAndUpdate(req.params.id, {
-      $set: { category, title, summary, event_date: eventDate || null, image_url: nextImage },
-    }, { returnDocument: "after", runValidators: true });
+    const nextImage =
+      uploadedUrl || (imageUrl === undefined ? previous.image_url : imageUrl || null);
+    const result = await Announcement.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: { category, title, summary, event_date: eventDate || null, image_url: nextImage },
+      },
+      { returnDocument: "after", runValidators: true },
+    );
     if (!result) {
       if (uploadedUrl) await removeImage(uploadedUrl);
       return res.status(404).json({ message: "Announcement not found." });
@@ -175,12 +220,15 @@ router.put("/announcements/:id", uploadAnnouncement.single("photo"), async (req,
   } catch (error) {
     console.error(error);
     if (uploadedUrl) await removeImage(uploadedUrl);
-    res.status(error.status === 400 ? 400 : 500).json({ message: error.status === 400 ? error.message : "Unable to update announcement." });
+    res
+      .status(error.status === 400 ? 400 : 500)
+      .json({ message: error.status === 400 ? error.message : "Unable to update announcement." });
   }
 });
 
 router.delete("/announcements/:id", async (req, res) => {
-  if (!mongoose.isObjectIdOrHexString(req.params.id)) return res.status(400).json({ message: "Invalid announcement ID." });
+  if (!mongoose.isObjectIdOrHexString(req.params.id))
+    return res.status(400).json({ message: "Invalid announcement ID." });
   try {
     const result = await Announcement.findByIdAndDelete(req.params.id);
     if (!result) return res.status(404).json({ message: "Announcement not found." });
@@ -195,8 +243,14 @@ router.delete("/announcements/:id", async (req, res) => {
 router.post("/papers", uploadPaper.single("paper"), async (req, res) => {
   const { title, subject, stream, year, paperType } = req.body || {};
 
-  if (!req.file || !validText(title, 255) || !validText(subject, 100) ||
-      ![...examStreams, "Both"].includes(stream) || !validYear(year) || !validText(paperType, 100)) {
+  if (
+    !req.file ||
+    !validText(title, 255) ||
+    !validText(subject, 100) ||
+    ![...examStreams, "Both"].includes(stream) ||
+    !validYear(year) ||
+    !validText(paperType, 100)
+  ) {
     removeUpload(req.file);
     return res.status(400).json({ message: "Paper file and all paper details are required." });
   }
@@ -208,7 +262,11 @@ router.post("/papers", uploadPaper.single("paper"), async (req, res) => {
     if (!signature) {
       const handle = await fs.promises.open(req.file.path, "r");
       signature = Buffer.alloc(5);
-      try { await handle.read(signature, 0, 5, 0); } finally { await handle.close(); }
+      try {
+        await handle.read(signature, 0, 5, 0);
+      } finally {
+        await handle.close();
+      }
     }
     if (signature.toString() !== "%PDF-") {
       removeUpload(req.file);
@@ -217,25 +275,38 @@ router.post("/papers", uploadPaper.single("paper"), async (req, res) => {
     const filename = req.file.filename || `${randomUUID()}.pdf`;
     if (cloud) storedId = await storePaper(req.file.buffer, filename);
     const fileUrl = storedId ? `/api/paper-files/${storedId}` : `/uploads/papers/${filename}`;
-    const result = await PastPaper.create({ title, subject, stream, exam_year: Number(year), paper_type: paperType, file_name: filename, file_url: fileUrl });
+    const result = await PastPaper.create({
+      title,
+      subject,
+      stream,
+      exam_year: Number(year),
+      paper_type: paperType,
+      file_name: filename,
+      file_url: fileUrl,
+    });
 
     res.status(201).json({ message: "Past paper uploaded.", id: result.id });
   } catch (error) {
     console.error(error);
     removeUpload(req.file);
-    if (storedId) await paperBucket().delete(storedId).catch(cleanupError => console.error(cleanupError));
+    if (storedId)
+      await paperBucket()
+        .delete(storedId)
+        .catch((cleanupError) => console.error(cleanupError));
     res.status(500).json({ message: "Unable to save the past paper." });
   }
 });
 
 router.delete("/papers/:id", async (req, res) => {
-  if (!mongoose.isObjectIdOrHexString(req.params.id)) return res.status(400).json({ message: "Invalid paper ID." });
+  if (!mongoose.isObjectIdOrHexString(req.params.id))
+    return res.status(400).json({ message: "Invalid paper ID." });
   try {
     const paper = await PastPaper.findById(req.params.id);
 
     if (!paper) return res.status(404).json({ message: "Paper not found." });
     const filePath = path.resolve(papersFolder, paper.file_name);
-    if (path.dirname(filePath) !== path.resolve(papersFolder)) throw new Error("Invalid paper file path.");
+    if (path.dirname(filePath) !== path.resolve(papersFolder))
+      throw new Error("Invalid paper file path.");
 
     await PastPaper.deleteOne({ _id: paper._id });
     if (paper.file_url.startsWith("/api/paper-files/")) {
@@ -255,30 +326,45 @@ router.post("/results/import", uploadSpreadsheet.single("resultsFile"), async (r
 
   if (!req.file || !examStreams.includes(stream) || !validYear(year)) {
     removeUpload(req.file);
-    return res.status(400).json({ message: "An Excel spreadsheet, valid stream and exam year are required." });
+    return res
+      .status(400)
+      .json({ message: "An Excel spreadsheet, valid stream and exam year are required." });
   }
 
   try {
     let workbook;
     try {
-      workbook = req.file.buffer ? XLSX.read(req.file.buffer, { type: "buffer" }) : XLSX.readFile(req.file.path);
+      const bytes = req.file.buffer || (await fs.promises.readFile(req.file.path));
+      workbook = XLSX.read(bytes, { type: "buffer" });
     } catch {
       throw Object.assign(new Error("Unable to read this Excel spreadsheet."), { status: 400 });
     }
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = prepareResultRows(XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null }), stream);
+    const rows = prepareResultRows(
+      XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null }),
+      stream,
+    );
     const imported = await inTransaction(mongoose.connection, async (session) => {
       for (const row of rows) {
         await ExamResult.findOneAndUpdate(
           { index_number: row[1], stream, exam_year: examYear },
-          { $set: {
-            full_name: row[0], subject1_name: stream === "Biological Science" ? "Biology" : "Combined Mathematics",
-            subject1_mark: row[2], subject1_grade: row[3],
-            subject2_name: "Physics", subject2_mark: row[5], subject2_grade: row[6],
-            subject3_name: "Chemistry", subject3_mark: row[8], subject3_grade: row[9],
-            z_average: row[11], rank_number: row[12],
-          } },
-          { upsert: true, runValidators: true, session }
+          {
+            $set: {
+              full_name: row[0],
+              subject1_name: stream === "Biological Science" ? "Biology" : "Combined Mathematics",
+              subject1_mark: row[2],
+              subject1_grade: row[3],
+              subject2_name: "Physics",
+              subject2_mark: row[5],
+              subject2_grade: row[6],
+              subject3_name: "Chemistry",
+              subject3_mark: row[8],
+              subject3_grade: row[9],
+              z_average: row[11],
+              rank_number: row[12],
+            },
+          },
+          { upsert: true, runValidators: true, session },
         );
       }
       return rows.length;
@@ -287,8 +373,17 @@ router.post("/results/import", uploadSpreadsheet.single("resultsFile"), async (r
     res.json({ message: `${imported} result records imported successfully.` });
   } catch (error) {
     console.error(error);
-    if (error.code === 20) return res.status(503).json({ message: "Result imports require MongoDB Atlas or a local replica set. No changes were saved." });
-    res.status(error.status === 400 ? 400 : 500).json({ message: error.status === 400 ? error.message : "Unable to import the results spreadsheet. No changes were saved." });
+    if (error.code === 20)
+      return res.status(503).json({
+        message:
+          "Result imports require MongoDB Atlas or a local replica set. No changes were saved.",
+      });
+    res.status(error.status === 400 ? 400 : 500).json({
+      message:
+        error.status === 400
+          ? error.message
+          : "Unable to import the results spreadsheet. No changes were saved.",
+    });
   } finally {
     removeUpload(req.file);
   }

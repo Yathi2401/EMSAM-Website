@@ -24,6 +24,9 @@ export async function requireAuth(req, res, next) {
     if (!user || !user.is_active) {
       return res.status(401).json({ message: "Your account is unavailable. Please log in again." });
     }
+    if ((claims.version || 0) !== (user.session_version || 0)) {
+      return res.status(401).json({ message: "Your session has expired. Please log in again." });
+    }
     req.user = user;
   } catch (error) {
     return next(error);

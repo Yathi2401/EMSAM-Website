@@ -1,4 +1,6 @@
-.about-page { background: #f4f7fb; }
+.about-page {
+  background: #f4f7fb;
+}
 
 .about-story {
   padding: 100px 6%;
@@ -39,7 +41,7 @@
   max-height: 600px;
   object-fit: cover;
   border-radius: 18px;
-  box-shadow: 0 24px 55px rgba(7,27,51,0.15);
+  box-shadow: 0 24px 55px rgba(7, 27, 51, 0.15);
 }
 
 .about-values-section {
@@ -47,9 +49,15 @@
   background: #061a32;
 }
 
-.light-heading h2 { color: #fff; }
-.light-heading .eyebrow { color: #d8a63a; }
-.light-heading p:last-child { color: #b9c8d6; }
+.light-heading h2 {
+  color: #fff;
+}
+.light-heading .eyebrow {
+  color: #d8a63a;
+}
+.light-heading p:last-child {
+  color: #b9c8d6;
+}
 
 .about-values-grid {
   display: grid;
@@ -62,20 +70,25 @@
   min-height: 265px;
   padding: 28px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 15px;
   color: #fff;
-  background: rgba(255,255,255,0.055);
-  transition: transform 0.3s ease, border-color 0.3s ease;
+  background: rgba(255, 255, 255, 0.055);
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease;
 }
 
-.about-value-card:hover { transform: translateY(-8px); border-color: #d8a63a; }
+.about-value-card:hover {
+  transform: translateY(-8px);
+  border-color: #d8a63a;
+}
 
 .about-value-number {
   position: absolute;
   top: 10px;
   right: 18px;
-  color: rgba(255,255,255,0.07);
+  color: rgba(255, 255, 255, 0.07);
   font-size: 68px;
   font-weight: 900;
 }
@@ -92,8 +105,16 @@
   font-size: 20px;
 }
 
-.about-value-card h3 { margin: 22px 0 12px; font-size: 21px; }
-.about-value-card p { margin: 0; color: #b9c8d6; font-size: 13px; line-height: 1.75; }
+.about-value-card h3 {
+  margin: 22px 0 12px;
+  font-size: 21px;
+}
+.about-value-card p {
+  margin: 0;
+  color: #b9c8d6;
+  font-size: 13px;
+  line-height: 1.75;
+}
 
 .about-impact {
   padding: 90px 6%;
@@ -112,19 +133,45 @@
   border-radius: 14px;
   background: #f7f9fb;
   text-align: center;
-  transition: transform 0.3s ease, border-color 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease;
 }
 
-.about-impact-grid div:hover { transform: translateY(-6px); border-color: #d8a63a; }
-.about-impact-grid strong { display: block; color: #0b2e59; font-size: 31px; }
-.about-impact-grid span { display: block; margin-top: 6px; color: #647587; font-size: 12px; }
+.about-impact-grid div:hover {
+  transform: translateY(-6px);
+  border-color: #d8a63a;
+}
+.about-impact-grid strong {
+  display: block;
+  color: #0b2e59;
+  font-size: 31px;
+}
+.about-impact-grid span {
+  display: block;
+  margin-top: 6px;
+  color: #647587;
+  font-size: 12px;
+}
 
 @media (max-width: 950px) {
-  .about-story-grid { grid-template-columns: 1fr; }
-  .about-values-grid, .about-impact-grid { grid-template-columns: repeat(2, 1fr); }
+  .about-story-grid {
+    grid-template-columns: 1fr;
+  }
+  .about-values-grid,
+  .about-impact-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 600px) {
-  .about-story, .about-values-section, .about-impact { padding: 75px 20px; }
-  .about-values-grid, .about-impact-grid { grid-template-columns: 1fr; }
+  .about-story,
+  .about-values-section,
+  .about-impact {
+    padding: 75px 20px;
+  }
+  .about-values-grid,
+  .about-impact-grid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -53,11 +53,15 @@ function Announcements() {
             <div className="announcement-grid">
               {items.map((item) => (
                 <article className="announcement-card" key={item.id}>
-                  {item.image_url && <PosterImage src={serverFileUrl(item.image_url)} alt={item.title} />}
+                  {item.image_url && (
+                    <PosterImage src={serverFileUrl(item.image_url)} alt={item.title} />
+                  )}
                   <div className="announcement-content">
                     <div className="announcement-meta">
                       <span>{item.category}</span>
-                      <time><FaCalendarAlt /> {formatDate(item.event_date || item.created_at)}</time>
+                      <time>
+                        <FaCalendarAlt /> {formatDate(item.event_date || item.created_at)}
+                      </time>
                     </div>
                     <h3>{item.title}</h3>
                     <p>{item.summary}</p>

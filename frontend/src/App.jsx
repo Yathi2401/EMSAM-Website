@@ -15,6 +15,9 @@ import Pathfinder from "./pages/Pathfinder";
 import Register from "./pages/Register";
 import Results from "./pages/Results";
 import StudentDashboard from "./pages/StudentDashboard";
+import PasswordRecovery from "./pages/PasswordRecovery";
+import Privacy from "./pages/Privacy";
+import PageMetadata from "./components/PageMetadata";
 
 import ScrollReveal from "./components/ScrollReveal";
 import "./motion.css";
@@ -22,6 +25,10 @@ import "./motion.css";
 function App() {
   return (
     <>
+      <PageMetadata />
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       <ScrollToTop />
       <ScrollReveal />
       <Routes>
@@ -34,6 +41,9 @@ function App() {
         <Route path="/announcements" element={<Announcements />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<PasswordRecovery key="request" />} />
+        <Route path="/reset-password" element={<PasswordRecovery key="reset" reset />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<StudentDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />

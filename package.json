@@ -2,8 +2,19 @@
   "name": "emsam-website",
   "private": true,
   "type": "module",
-  "engines": { "node": "22.x" },
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
-    "build": "npm run build --prefix frontend && node scripts/copy-papers.mjs"
+    "test:browser": "playwright test",
+    "format": "prettier --write \"{api,backend,frontend/src,scripts,shared,tests}/**/*.{js,jsx,mjs,css}\" \"*.{js,json}\" \"{backend,frontend}/package.json\" \"frontend/*.{js,html}\" \".github/workflows/*.{yml,yaml}\"",
+    "format:check": "prettier --check \"{api,backend,frontend/src,scripts,shared,tests}/**/*.{js,jsx,mjs,css}\" \"*.{js,json}\" \"{backend,frontend}/package.json\" \"frontend/*.{js,html}\" \".github/workflows/*.{yml,yaml}\"",
+    "build": "npm run build --prefix frontend && node scripts/copy-papers.mjs && node scripts/generate-pages.mjs",
+    "check:deployment": "node scripts/check-deployment.mjs",
+    "check:config": "node backend/scripts/checkProductionConfig.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "prettier": "3.6.2"
   }
 }

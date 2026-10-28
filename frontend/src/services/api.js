@@ -1,4 +1,6 @@
-const API_URL = (import.meta.env.PROD ? "/api" : (import.meta.env.VITE_API_URL || "http://localhost:5000/api")).replace(/\/+$/, "");
+const API_URL = (
+  import.meta.env.PROD ? "/api" : import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+).replace(/\/+$/, "");
 const SERVER_URL = API_URL.replace(/\/api\/?$/, "");
 
 export async function apiRequest(path, options = {}) {
@@ -50,10 +52,15 @@ export async function downloadAdminFile(path, fallbackName) {
     const data = await response.json().catch(() => ({}));
     throw new Error(data.message || "Unable to download this file.");
   }
-  const filename = response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] || fallbackName;
+  const filename =
+    response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] || fallbackName;
   const url = URL.createObjectURL(await response.blob());
-  const link = document.createElement("a"); link.href = url; link.download = filename;
-  document.body.appendChild(link); link.click(); link.remove();
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 
@@ -66,7 +73,13 @@ export function getCurrentUser() {
   const value = localStorage.getItem("emsamUser");
   try {
     const user = value ? JSON.parse(value) : null;
-    if (!user || typeof user !== "object" || !user.id || !["student", "admin"].includes(user.role) || !localStorage.getItem("emsamToken")) {
+    if (
+      !user ||
+      typeof user !== "object" ||
+      !user.id ||
+      !["student", "admin"].includes(user.role) ||
+      !localStorage.getItem("emsamToken")
+    ) {
       clearSession();
       return null;
     }

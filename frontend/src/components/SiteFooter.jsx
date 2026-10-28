@@ -47,8 +47,8 @@ function SiteFooter() {
             </div>
           </div>
           <p className="footer-summary">
-            Supporting students through examinations, educational resources,
-            career guidance, university guidance and community service.
+            Supporting students through examinations, educational resources, career guidance,
+            university guidance and community service.
           </p>
         </div>
 
@@ -66,6 +66,7 @@ function SiteFooter() {
           <Link to="/results">Results</Link>
           <Link to="/register">Create Account</Link>
           <Link to="/contact">Contact EMSAM</Link>
+          <Link to="/privacy">Privacy & your data</Link>
         </div>
 
         <div className="footer-social">

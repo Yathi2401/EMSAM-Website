@@ -9,7 +9,8 @@ import { imageBucket } from "../utils/announcementImages.js";
 const router = express.Router();
 
 router.get("/announcement-images/:id", async (req, res, next) => {
-  if (!mongoose.isObjectIdOrHexString(req.params.id)) return res.status(400).json({ message: "Invalid photo ID." });
+  if (!mongoose.isObjectIdOrHexString(req.params.id))
+    return res.status(400).json({ message: "Invalid photo ID." });
   try {
     const id = new mongoose.Types.ObjectId(req.params.id);
     const bucket = imageBucket();
@@ -19,11 +20,14 @@ router.get("/announcement-images/:id", async (req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Content-Length", file.length);
     bucket.openDownloadStream(id).on("error", next).pipe(res);
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.get("/paper-files/:id", async (req, res, next) => {
-  if (!mongoose.isObjectIdOrHexString(req.params.id)) return res.status(400).json({ message: "Invalid file ID." });
+  if (!mongoose.isObjectIdOrHexString(req.params.id))
+    return res.status(400).json({ message: "Invalid file ID." });
   try {
     const id = new mongoose.Types.ObjectId(req.params.id);
     const bucket = paperBucket();
@@ -33,17 +37,29 @@ router.get("/paper-files/:id", async (req, res, next) => {
     res.setHeader("Content-Length", file.length);
     res.setHeader("Content-Disposition", 'inline; filename="paper.pdf"');
     bucket.openDownloadStream(id).on("error", next).pipe(res);
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 });
 
-router.get("/health", (_req, res) => {
-  res.json({ status: "ok", service: "EMSAM API" });
+router.get("/health", async (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    await mongoose.connection.db.admin().ping();
+    res.json({ status: "ok", service: "EMSAM API" });
+  } catch {
+    res.status(503).json({ status: "unavailable", service: "EMSAM API" });
+  }
 });
 
 router.get("/announcements", async (_req, res) => {
   try {
     const rows = await Announcement.find({ is_published: true });
-    rows.sort((a, b) => new Date(b.event_date || b.created_at) - new Date(a.event_date || a.created_at) || b.id.localeCompare(a.id));
+    rows.sort(
+      (a, b) =>
+        new Date(b.event_date || b.created_at) - new Date(a.event_date || a.created_at) ||
+        b.id.localeCompare(a.id),
+    );
 
     res.json(rows);
   } catch (error) {
@@ -54,7 +70,10 @@ router.get("/announcements", async (_req, res) => {
 
 router.get("/papers", async (req, res) => {
   const { subject, year, type, stream, search } = req.query;
-  if (![subject, type, stream, search].every(value => validText(value, 255, true)) || (year !== undefined && !validYear(year))) {
+  if (
+    ![subject, type, stream, search].every((value) => validText(value, 255, true)) ||
+    (year !== undefined && !validYear(year))
+  ) {
     return res.status(400).json({ message: "Provide valid search filters and exam year." });
   }
   const filter = { is_published: true };
@@ -77,7 +96,10 @@ router.get("/papers", async (req, res) => {
 
   if (search) {
     const literal = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    filter.$or = [{ title: { $regex: literal, $options: "i" } }, { subject: { $regex: literal, $options: "i" } }];
+    filter.$or = [
+      { title: { $regex: literal, $options: "i" } },
+      { subject: { $regex: literal, $options: "i" } },
+    ];
   }
 
   try {
@@ -95,11 +117,17 @@ router.get("/results", rateLimit("results", 60), async (req, res) => {
   const { indexNumber, stream, year = 2026 } = req.query;
 
   if (!validText(indexNumber, 30) || !examStreams.includes(stream) || !validYear(year)) {
-    return res.status(400).json({ message: "A valid index number, stream and exam year are required." });
+    return res
+      .status(400)
+      .json({ message: "A valid index number, stream and exam year are required." });
   }
 
   try {
-    const result = await ExamResult.findOne({ index_number: indexNumber.trim(), stream, exam_year: Number(year) });
+    const result = await ExamResult.findOne({
+      index_number: indexNumber.trim(),
+      stream,
+      exam_year: Number(year),
+    });
 
     if (!result) {
       return res.status(404).json({ message: "No result was found for the provided details." });
@@ -115,12 +143,24 @@ router.get("/results", rateLimit("results", 60), async (req, res) => {
 router.post("/contact", rateLimit("contact", 10), async (req, res) => {
   const { fullName, email, subject, message } = req.body || {};
 
-  if (!validText(fullName, 150) || !validEmail(email) || !validText(subject, 200) || !validText(message, 10000)) {
-    return res.status(400).json({ message: "Please provide a valid name, email, subject and message (up to 10,000 characters)." });
+  if (
+    !validText(fullName, 150) ||
+    !validEmail(email) ||
+    !validText(subject, 200) ||
+    !validText(message, 10000)
+  ) {
+    return res.status(400).json({
+      message: "Please provide a valid name, email, subject and message (up to 10,000 characters).",
+    });
   }
 
   try {
-    await ContactMessage.create({ full_name: fullName.trim(), email: email.toLowerCase().trim(), subject: subject.trim(), message: message.trim() });
+    await ContactMessage.create({
+      full_name: fullName.trim(),
+      email: email.toLowerCase().trim(),
+      subject: subject.trim(),
+      message: message.trim(),
+    });
 
     res.status(201).json({ message: "Your message has been sent to EMSAM." });
   } catch (error) {
