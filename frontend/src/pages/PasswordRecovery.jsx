@@ -58,6 +58,7 @@ export default function PasswordRecovery({ reset = false }) {
               : "Enter the email address registered with your EMSAM account."
           }
           image="/media/emsam-logo.jpg"
+          imageVariant="logo"
         />
         <section className="auth-section">
           <div className="auth-card small-card">

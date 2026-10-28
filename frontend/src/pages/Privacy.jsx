@@ -13,6 +13,7 @@ export default function Privacy() {
           title="Privacy & Your Data"
           description="How EMSAM uses information provided through this website."
           image="/media/emsam-logo.jpg"
+          imageVariant="logo"
         />
         <article className="privacy-copy section-shell">
           <p>

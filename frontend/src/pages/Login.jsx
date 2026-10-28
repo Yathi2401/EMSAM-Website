@@ -45,6 +45,7 @@ function Login() {
           title="Welcome Back"
           description="Students and EMSAM administrators can log in to access their dashboard and services."
           image="/media/emsam-logo.jpg"
+          imageVariant="logo"
         />
 
         <section className="auth-section">
